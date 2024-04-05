@@ -21,7 +21,7 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "mongoose": "^8.3.0",
-    "react-router-dom": "^5.3.4"
+    "react-router-dom": "6.4"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
