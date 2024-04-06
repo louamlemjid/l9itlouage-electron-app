@@ -1,34 +1,61 @@
 import dest from "./../assets/destination.png"
-import qrscan from "./../assets/scan-qr-scanner.png"
+
+import register from "./../assets/register.png"
+import ticket from "./../assets/ticket.png"
+import addLocation from "./../assets/add-location.png" 
+import taxi from "./../assets/taxis.png"
+import ticketMachine from "./../assets/ticket-machine.png"
+
 import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 
 function Choices(){
     return(
         <div className="choices">
-        <Link to="/entree" className="m-auto" >
-            
-            
-            <button type="submit" id="menuform" className="m-auto">
-                <img src={qrscan} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-5">Entrée</label>
-                
+
+        <Link to="/nouveaulouage" className="m-auto" >
+            <button  id="menuform" className="m-auto">
+                <img src={register} alt="" width="70" className="m-auto" />
+                <label for="" className="m-auto fs-6">Nouveau Louage</label>
             </button>
         </Link>
-        <Link to="/sortie" className="m-auto" >
-            
-            <button type="submit" id="menuform" >
-                <img src={qrscan} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-5">Sortie</label>
-                
-            </button>
-        </Link>
-        <Link to="/destination" className="m-auto">
-            
-            <button type="submit" id="menuform" >
+
+        <Link to="/destinationtarifliste" className="m-auto" >
+            <button  id="menuform" >
                 <img src={dest} alt="" width="70" className="m-auto" />
-                <label className="m-auto fs-5" >Ajouter</label>     
+                <label for="" className="m-auto fs-6">Destinations Tarif Liste</label>
             </button>
         </Link>
+
+        <Link to="/nouvelledestination" className="m-auto">
+            <button  id="menuform" >
+                <img src={addLocation} alt="" width="70" className="m-auto" />
+                <label className="m-auto fs-6" >Nouvelle Destination</label>     
+            </button>
+        </Link>
+
+        <Link to="/louageliste" className="m-auto" >
+            <button  id="menuform" >
+                <img src={taxi} alt="" width="70" className="m-auto" />
+                <label for="" className="m-auto fs-6">Louage Liste</label>
+            </button>
+        </Link>
+
+        <Link to="/ticketliste" className="m-auto" >
+            
+            <button  id="menuform" >
+                <img src={ticket} alt="" width="70" className="m-auto" />
+                <label for="" className="m-auto fs-6">Ticket Liste</label>
+                
+            </button>
+        </Link>
+
+        <Link to="/achatticket" className="m-auto" >
+            <button  id="menuform" >
+                <img src={ticketMachine} alt="" width="70" className="m-auto" />
+                <label for="" className="m-auto fs-6">Achat Ticket</label>
+            </button>
+        </Link>
+
     </div>
     )
 }

@@ -14,12 +14,10 @@ function App() {
         
         <Routes>
           <Route index path="/" element={<Choices/>} />
-          <Route  path="hi" element={<DestinationTarif></DestinationTarif>} />
+          <Route  path="nouvelledestination" element={<DestinationTarif></DestinationTarif>} />
         </Routes>
         <Footer></Footer>
       </BrowserRouter>
-      {/* Moved Footer outside of Router */}
-      {/* <Footer /> */}
     </>
   );
 }

@@ -10,9 +10,9 @@ function Header(){
             <p className="navbar-brand m-auto">L9itLouage</p>
             </div>
             
-            <div >
-            <Link to="/">Menu</Link> {/* Changed the link text */}
-        <Link to="hi">destination</Link> {/* Changed the link text */}
+            <div id="links">
+            <Link to="/" className="navbar-brand m-auto " id="link">Menu</Link> {/* Changed the link text */}
+            <Link to="hi" className="navbar-brand m-auto " id="link">destination</Link> {/* Changed the link text */}
             </div>
         </nav>
     )
