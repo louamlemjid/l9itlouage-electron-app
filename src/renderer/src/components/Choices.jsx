@@ -12,7 +12,7 @@ function Choices(){
     return(
         <div className="choices">
 
-        <Link to="/nouveaulouage" className="m-auto" >
+        <Link to="/menu/nouveaulouage" className="m-auto" >
             <button  id="menuform" className="m-auto">
                 <img src={register} alt="" width="70" className="m-auto" />
                 <label for="" className="m-auto fs-6">Nouveau Louage</label>
@@ -26,14 +26,14 @@ function Choices(){
             </button>
         </Link>
 
-        <Link to="/nouvelledestination" className="m-auto">
+        <Link to="/menu/nouvelledestination" className="m-auto">
             <button  id="menuform" >
                 <img src={addLocation} alt="" width="70" className="m-auto" />
                 <label className="m-auto fs-6" >Nouvelle Destination</label>     
             </button>
         </Link>
 
-        <Link to="/louageliste" className="m-auto" >
+        <Link to="/menu/louageliste" className="m-auto" >
             <button  id="menuform" >
                 <img src={taxi} alt="" width="70" className="m-auto" />
                 <label for="" className="m-auto fs-6">Louage Liste</label>

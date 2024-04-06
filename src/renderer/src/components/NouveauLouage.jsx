@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CityDropdown from "./CityDropdown"
 
+
 function Form(){
 
   const [email, setEmail] = useState('');
@@ -18,11 +19,11 @@ function Form(){
 
 
   return (
-    <form onSubmit={handleSubmit} id="generalForm" className="w-75 m-auto">
-      <h1 className="text-primary fs-2 m-auto w-75">إضافة لواج إلى المحطة</h1>
+    <form onSubmit={handleSubmit} id="generalForm" className="w-50 ">
+      <h1 className="text-dark fs-2 m-auto w-75">إضافة لواج إلى المحطة</h1>
       <div class="mb-3 input-group">
                 <span class="input-group-text bg-transparent text-dark" id="basic-addon1">First name</span>
-                <input type="text" class="form-control bg-transparent text-dark" 
+                <input type="text" class="form-control bg-dark text-light" 
                 name="firstNameLouage" id="firstNameLouage" required placeholder="Name"/>
               </div>
               <div class="input-group mb-3">
@@ -82,7 +83,7 @@ function Form(){
           onChange={(e) => setExpireDate(e.target.value)} />
         </div>
          
-        <div id="blocLouage" >
+        
               <div class=" mb-3 matricule w-50 m-auto">
                 <div class="text-white matriculeInside ">
                   <input class="text-dark bg-transparent m-auto fs-2 w-100 matrLeft" 
@@ -94,8 +95,8 @@ function Form(){
                 </div>
                 {/* <span class="text-white m-auto">demo</span> */}
               </div>
-        </div>
-        <button type="submit" class="btn btn-primary w-50 m-auto">إضافة</button>
+        
+        <button type="submit" class="btn btn-dark w-25 m-auto">إضافة</button>
     </form>
   )
 }

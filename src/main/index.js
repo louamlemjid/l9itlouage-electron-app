@@ -2,6 +2,18 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import {mongoose} from 'mongoose';
+
+//mongodb architeture
+mongoose.connect('mongodb+srv://louam-lemjid:8hAgfKf2ZDauLxoj@cluster0.mjqmopn.mongodb.net/electdb');
+const electschema=new mongoose.Schema({
+  email:String,
+  password:String,
+  expireDate:Date
+})
+const Elect=mongoose.model("Elect",electschema);
+const db = mongoose.connection;
+
 
 function createWindow() {
   // Create the browser window.
@@ -50,7 +62,52 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  db.on('error', console.error.bind(console, 'Connection error:'));
+  db.once('open', async function () {
+    console.log('Connected to the database');
+    //do something
+    try{
+      console.log('working ..')
+      //add
+      ipcMain.on('add',async(event,data) => {
+        console.log(`ping ipc 1: ${data}`)
+        const result=await Elect.insertMany([
+          {email:data.email,password:data.password,expireDate:data.expireDate}
+      ]);
+        console.log(result)
+      })
+      // childWindow(mainWindow)
+      //send data
+      ipcMain.on('get-city', async(event,data) => {
+        console.log("call for data is triggured")
+        // childWindow()
+        console.log(`this is the message : ${data}`)
+        const users=await Elect.find()
+        console.log(users)
+        event.sender.send('city-data', users);
+        console.log("data is sent to react")
+      });
+      //child
+      ipcMain.on('child-message', (event, message) => {
+        console.log('Message from child window:', message);
+        // Add your handling logic here
+      });
+      //find
+      ipcMain.on('find',async(event,data) => {
+        console.log(`find ipc 2: ${data}`)
+        const result=await Elect.find();
+        console.log(result)
+      })
+      //update
+      ipcMain.on('add',async(event,data) => {
+        console.log(`update ipc 3: ${data}`)
+      //   
+      })
+    }catch(error){
+      console.error('error accured',error)
+      console.log('connection to mongodb server failed')
+    }
+  })
 
   createWindow()
 

@@ -2,7 +2,10 @@ function currentYear(){
     return new Date().getFullYear();
 }
 const Footer=()=>{
-    return(<footer>
+    return(
+      <>
+      <br />
+      <footer>
       <ul className="nav justify-content-center border-bottom border-top pb-3 mb-3">
         <li className="nav-item"><a href="#" className="nav-link px-2 text-dark">Home</a></li>
         <li className="nav-item"><a href="#" className="nav-link px-2 text-dark">Features</a></li>
@@ -12,7 +15,9 @@ const Footer=()=>{
       </ul>
       <p className="text-center fs-4 text-dark">L9itLouage © {currentYear()}, Inc</p>
   
-    </footer>)
+    </footer>
+      </>
+    )
 }
 export default Footer;
 

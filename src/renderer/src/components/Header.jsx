@@ -11,8 +11,8 @@ function Header(){
             </div>
             
             <div id="links">
-            <Link to="/" className="navbar-brand m-auto " id="link">Menu</Link> {/* Changed the link text */}
-            <Link to="hi" className="navbar-brand m-auto " id="link">destination</Link> {/* Changed the link text */}
+            <Link to="/menu" className="navbar-brand m-auto " id="link">Menu</Link> {/* Changed the link text */}
+            <Link to="/" className="navbar-brand m-auto " id="link">Se connecter</Link> {/* Changed the link text */}
             </div>
         </nav>
     )
