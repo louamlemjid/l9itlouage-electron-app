@@ -1,20 +1,22 @@
 
 import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
-
 import Footer from './components/Footer';
-
+import Header from "./components/Header"
+import Choices from './components/Choices'
+import DestinationTarif from './components/DestinationTarif'
 function App() {
   
 
   return (
     <>
       <BrowserRouter>
-        <Link to="/">Home</Link> {/* Changed the link text */}
-        <Link to="hi">kd</Link> {/* Changed the link text */}
+        <Header></Header>
+        
         <Routes>
-          <Route index path="/" element={<Footer/>} />
-          <Route  path="hi" element={<h1>ddddddddddd</h1>} />
+          <Route index path="/" element={<Choices/>} />
+          <Route  path="hi" element={<DestinationTarif></DestinationTarif>} />
         </Routes>
+        <Footer></Footer>
       </BrowserRouter>
       {/* Moved Footer outside of Router */}
       {/* <Footer /> */}
