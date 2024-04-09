@@ -19,6 +19,7 @@ function Form(){
 
 
   return (
+    
     <form onSubmit={handleSubmit} id="generalForm" className="w-50 ">
       <h1 className="text-dark fs-2 m-auto w-75">إضافة لواج إلى المحطة</h1>
       <div class="mb-3 input-group">

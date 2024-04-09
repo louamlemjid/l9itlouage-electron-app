@@ -1,5 +1,5 @@
 import dest from "./../assets/destination.png"
-
+import "../assets/base.css"
 import register from "./../assets/register.png"
 import ticket from "./../assets/ticket.png"
 import addLocation from "./../assets/add-location.png" 
@@ -15,14 +15,14 @@ function Choices(){
         <Link to="/menu/nouveaulouage" className="m-auto" >
             <button  id="menuform" className="m-auto">
                 <img src={register} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-6">Nouveau Louage</label>
+                <label className="m-auto fs-6">Nouveau Louage</label>
             </button>
         </Link>
 
-        <Link to="/destinationtarifliste" className="m-auto" >
+        <Link to="/menu/destinationtarifliste" className="m-auto" >
             <button  id="menuform" >
                 <img src={dest} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-6">Destinations Tarif Liste</label>
+                <label  className="m-auto fs-6">Destinations Tarif Liste</label>
             </button>
         </Link>
 
@@ -36,7 +36,7 @@ function Choices(){
         <Link to="/menu/louageliste" className="m-auto" >
             <button  id="menuform" >
                 <img src={taxi} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-6">Louage Liste</label>
+                <label  className="m-auto fs-6">Louage Liste</label>
             </button>
         </Link>
 
@@ -44,7 +44,7 @@ function Choices(){
             
             <button  id="menuform" >
                 <img src={ticket} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-6">Ticket Liste</label>
+                <label  className="m-auto fs-6">Ticket Liste</label>
                 
             </button>
         </Link>
@@ -52,7 +52,7 @@ function Choices(){
         <Link to="/achatticket" className="m-auto" >
             <button  id="menuform" >
                 <img src={ticketMachine} alt="" width="70" className="m-auto" />
-                <label for="" className="m-auto fs-6">Achat Ticket</label>
+                <label  className="m-auto fs-6">Achat Ticket</label>
             </button>
         </Link>
 

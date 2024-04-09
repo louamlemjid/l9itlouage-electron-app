@@ -11,12 +11,17 @@ export default function LouageList(){
 
     fetchData();
 
-    const interval = setInterval(fetchData, 1000); // Fetch data every 2 seconds
-
-    // Clean up interval on unmount
-    return () => clearInterval(interval);
+    
   }, []);
+  const handleCheckOut = (email) => {
+    // Send POST request to main process with the email for check out
+    window.electron.ipcRenderer.send('check-out', email);
+  };
 
+  const handlePayment = (email) => {
+    // Send POST request to main process with the email for payment
+    window.electron.ipcRenderer.send('payment', email);
+  };
   // Listen for response from main process
   useEffect(() => {
     window.electron.ipcRenderer.on('city-data', (event, data) => {
@@ -37,8 +42,9 @@ export default function LouageList(){
             <th className="text-center" scope="col">password</th>
             <th className="text-center" scope="col">date d'expiration</th>
             <th className="text-center" scope="col">check out</th>
-            <th className="text-center" scope="col">paiment</th>
-            <th className="text-center" scope="col">effecter</th>
+            <th className="text-center" scope="col">louage inStation</th>
+            <th className="text-center" scope="col">effecter paiment</th>
+            <th className="text-center" scope="col">louage a payé</th>
           </tr>
         </thead>
         <tbody className="table-group-divider">
@@ -47,9 +53,10 @@ export default function LouageList(){
               <td className="text-center">{item._doc.email}</td>
               <td className="text-center">{item._doc.password}</td>
               <td className="text-center">{fullDate(item._doc.expireDate)}</td>
-              <td className="text-center"><button className='btn btn-primary'>faire sortir</button></td>
-              <td className="text-center text-danger">non</td>
-              <td className="text-center"><button className='btn btn-success'>payer</button></td>
+              <td className="text-center"><button className='btn btn-primary' onClick={()=>handleCheckOut(item._doc.email)} >faire sortir</button></td>
+              <td className={`text-center ${item._doc.inStation === true ? 'text-success' : 'text-danger'}`}>{item._doc.inStation?"oui":"non"}</td>
+              <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(item._doc.email)}>payer</button></td>
+              <td className={`text-center ${item._doc.paiment === true ? 'text-success' : 'text-danger'}`}>{item._doc.paiment?"oui":"non"}</td>
             </tr>
           ))} 
         </tbody>

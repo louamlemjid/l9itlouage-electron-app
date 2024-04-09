@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain ,dialog, session} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -9,11 +9,36 @@ mongoose.connect('mongodb+srv://louam-lemjid:8hAgfKf2ZDauLxoj@cluster0.mjqmopn.m
 const electschema=new mongoose.Schema({
   email:String,
   password:String,
-  expireDate:Date
+  expireDate:Date,
+  paiment:Boolean,
+  inStation:Boolean
 })
 const Elect=mongoose.model("Elect",electschema);
+
+const destschema=new mongoose.Schema({
+  name:String,
+  tarif:Number,
+})
+const Dest=mongoose.model("Dest",destschema);
+
 const db = mongoose.connection;
 
+function scan () {
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: ('../preload/scanPreload.js')
+    }
+  })
+  
+  win.loadURL('File://C:/Users/Dell/Desktop/recover/my-app/src/renderer/scan.html')
+}
+
+async function handleFileOpen () {
+  const { canceled, filePaths } = await dialog.showOpenDialog()
+  if (!canceled) {
+    return filePaths[0]
+  }
+}
 
 function createWindow() {
   // Create the browser window.
@@ -68,7 +93,10 @@ app.whenReady().then(() => {
     //do something
     try{
       console.log('working ..')
+      
       //add
+      const ses = session.fromPartition('persist:name')
+      
       ipcMain.on('add',async(event,data) => {
         console.log(`ping ipc 1: ${data}`)
         const result=await Elect.insertMany([
@@ -81,10 +109,21 @@ app.whenReady().then(() => {
       ipcMain.on('get-city', async(event,data) => {
         console.log("call for data is triggured")
         // childWindow()
+        console.log(ses.getUserAgent())
         console.log(`this is the message : ${data}`)
         const users=await Elect.find()
         console.log(users)
         event.sender.send('city-data', users);
+        console.log("data is sent to react")
+      });
+      //destination list
+      ipcMain.on('destinations', async(event) => {
+        console.log("call for data is triggured in destinations")
+        // childWindow()
+        
+        const destinations=await Dest.find()
+        console.log(destinations)
+        event.sender.send('destinations', destinations);
         console.log("data is sent to react")
       });
       //child
@@ -92,11 +131,47 @@ app.whenReady().then(() => {
         console.log('Message from child window:', message);
         // Add your handling logic here
       });
+      //updateDestination
+      ipcMain.on('update-destination', async(event, data) => {
+        console.log('Message from destination tarif liste :',data.name, data.tarif);
+        if(data.name&&data.tarif){
+          const update=await Dest.updateOne({name:data.name},{tarif:data.tarif})
+          console.log(update)
+        }
+        const destinations=await Dest.find()
+        console.log(destinations)
+        event.sender.send('destinations', destinations);
+        console.log("data is sent to react")
+        // Add your handling logic here
+      });
       //find
       ipcMain.on('find',async(event,data) => {
-        console.log(`find ipc 2: ${data}`)
-        const result=await Elect.find();
+        console.log(`find -- sent from sign in: ${data.email}`)
+        
+        const result=await Elect.findOne({email:data.email,password:data.password});
         console.log(result)
+        if(result){ses.setUserAgent(data.email)}
+        event.sender.send('find',result)
+      })
+      //checkOut
+      ipcMain.on("check-out",async(event,louageEmail)=>{
+        console.log(`email sent from louage list component to checkout: ${louageEmail}`)
+        const checkOut=await Elect.updateOne({email:louageEmail},{inStation:false})
+        console.log(`louage est partie ?! : ${checkOut}`)
+        const users=await Elect.find()
+        console.log(users)
+        event.sender.send('city-data', users);
+        console.log("data is sent to react")
+      })
+      //paiment
+      ipcMain.on("payment",async(event,louageEmail)=>{
+        console.log(`email sent from louage list component to pay: ${louageEmail}`)
+        const paiment=await Elect.updateOne({email:louageEmail},{paiment:true})
+        console.log(`louage a payé ?! : ${paiment}`)
+        const users=await Elect.find()
+        console.log(users)
+        event.sender.send('city-data', users);
+        console.log("data is sent to react")
       })
       //update
       ipcMain.on('add',async(event,data) => {
@@ -108,9 +183,9 @@ app.whenReady().then(() => {
       console.log('connection to mongodb server failed')
     }
   })
-
+  ipcMain.handle('dialog:openFile', handleFileOpen)
   createWindow()
-
+  // scan()
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
