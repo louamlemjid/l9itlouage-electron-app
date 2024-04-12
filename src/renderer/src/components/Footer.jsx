@@ -8,7 +8,7 @@ const Footer=()=>{
       <footer>
       
       <p className="text-center fs-4 text-dark border-top">L9itLouage © {currentYear()}, Inc</p>
-  
+
     </footer>
       </>
     )

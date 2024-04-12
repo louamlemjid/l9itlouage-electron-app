@@ -5,7 +5,7 @@ import ticket from "./../assets/ticket.png"
 import addLocation from "./../assets/add-location.png" 
 import taxi from "./../assets/taxis.png"
 import ticketMachine from "./../assets/ticket-machine.png"
-
+import qrcode from './../assets/scan-qr-scanner.png'
 import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 
 function Choices(){
@@ -18,7 +18,7 @@ function Choices(){
                 <label className="m-auto fs-6">Nouveau Louage</label>
             </button>
         </Link>
-
+        
         <Link to="/menu/destinationtarifliste" className="m-auto" >
             <button  id="menuform" >
                 <img src={dest} alt="" width="70" className="m-auto" />
@@ -56,6 +56,12 @@ function Choices(){
             </button>
         </Link>
 
+        <Link>
+        <button id="menuform" className="m-auto" onClick={()=>window.electron.ipcRenderer.send("child-message")}>
+        <img src={qrcode} alt="" width="70" className="m-auto" />
+                <label className="m-auto fs-6">Entree/Sortie scan</label>
+        </button>
+        </Link>
     </div>
     )
 }

@@ -64,10 +64,10 @@ export default function DestinationTarifList() {
             <td className="text-center align-middle">{item._doc.name}</td>
             <td className="text-center align-middle">{item._doc.tarif}</td>
             <td className="text-center">
-              <form className="d-flex align-items-center w-50 justify-content-center" onSubmit={(event) => handleUpdate(event,item._doc.name, newTariff[index])}>
+              <form id='tariflist' className="d-flex align-items-center w-50 justify-content-center" onSubmit={(event) => handleUpdate(event,item._doc.name, newTariff[index])}>
                 <input 
                   type="number"
-                  className="w-50  form-control bg-light  text-dark"
+                  className="w-50 form-control bg-light text-dark"
                   value={newTariff[index]}
                   onChange={(event) => handleChange(event, index)} 
                 />

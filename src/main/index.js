@@ -1,11 +1,26 @@
-import { app, shell, BrowserWindow, ipcMain ,dialog, session} from 'electron'
+import { 
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain ,
+  dialog,
+  session,
+  protocol,
+  Menu,
+  Tray,
+Notification} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {mongoose} from 'mongoose';
+import dotenv from 'dotenv';
+import { title } from 'process';
+dotenv.config({ path: join(__dirname, '../../../my-app/.env') });
+
 
 //mongodb architeture
-mongoose.connect('mongodb+srv://louam-lemjid:8hAgfKf2ZDauLxoj@cluster0.mjqmopn.mongodb.net/electdb');
+mongoose.connect(`${process.env.MONGODB_LINK}`);
+
 const electschema=new mongoose.Schema({
   email:String,
   password:String,
@@ -22,15 +37,26 @@ const destschema=new mongoose.Schema({
 const Dest=mongoose.model("Dest",destschema);
 
 const db = mongoose.connection;
-
-function scan () {
-  const win = new BrowserWindow({
+let mainWindow;
+let scanWindow;
+let tray;
+let notification;
+const childWindow=()=>{
+  const scanWindow = new BrowserWindow({
+    width: 800,
+    height: 700,
+    show: true,
+    autoHideMenuBar: true,
+    //without parent // Set parent window
+    modal: true, // Make it modal if needed
     webPreferences: {
-      preload: ('../preload/scanPreload.js')
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false, // Allow loading external scripts
+      nodeIntegration: true
     }
   })
+  scanWindow.loadFile(join(__dirname, '../../src/renderer/scan.html'))
   
-  win.loadURL('File://C:/Users/Dell/Desktop/recover/my-app/src/renderer/scan.html')
 }
 
 async function handleFileOpen () {
@@ -46,6 +72,7 @@ function createWindow() {
     width: 900,
     height: 670,
     show: false,
+    icon:join(__dirname,"../../src/renderer/src/assets/bus.png"),
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -53,11 +80,53 @@ function createWindow() {
       sandbox: false
     }
   })
+  
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
-
+  const template = [
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Scan",
+          accelerator: "Ctrl+N",
+          click() {
+            const scanWindow = new BrowserWindow({
+              width: 800,
+              height: 700,
+              show: true,
+              autoHideMenuBar: true,
+              parent: mainWindow, // Set parent window
+              modal: true, // Make it modal if needed
+              webPreferences: {
+                preload: join(__dirname, '../preload/index.js'),
+                sandbox: false, // Allow loading external scripts
+                nodeIntegration: true
+              }
+            })
+            scanWindow.loadFile(join(__dirname, '../../src/renderer/scan.html'))
+          }
+        },
+        { type: "separator" },
+        { role: "quit" }
+      ]
+    }
+  ];
+  notification=new Notification({
+    title:'l9itlouage',
+    subtitle:"تم التحقق من الهوية",
+    body:"مرحبا بيك في التطبيق متاعنا ",
+  icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
+  
+  tray=new Tray(join(__dirname,"../../src/renderer/src/assets/bus.png"))
+  tray.on('click',()=>{
+    mainWindow.isVisible()?mainWindow.hide():mainWindow.show()
+  })
+  
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -76,6 +145,7 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -127,9 +197,10 @@ app.whenReady().then(() => {
         console.log("data is sent to react")
       });
       //child
-      ipcMain.on('child-message', (event, message) => {
-        console.log('Message from child window:', message);
+      ipcMain.on('child-message', (event, ) => {
+        console.log('Message from child window:');
         // Add your handling logic here
+        childWindow()
       });
       //updateDestination
       ipcMain.on('update-destination', async(event, data) => {
@@ -150,7 +221,8 @@ app.whenReady().then(() => {
         
         const result=await Elect.findOne({email:data.email,password:data.password});
         console.log(result)
-        if(result){ses.setUserAgent(data.email)}
+        if(result){ses.setUserAgent(data.email)
+          notification.show()}
         event.sender.send('find',result)
       })
       //checkOut
@@ -199,6 +271,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+    
   }
 })
 
