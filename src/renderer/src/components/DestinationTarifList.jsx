@@ -5,12 +5,12 @@ export default function DestinationTarifList() {
   const [newTariff, setNewTariff] = useState([]);
   
   useEffect(() => {
-    const fetchData = () => {
+    const sendData = () => {
       // Send request to main process to get city data
       window.electron.ipcRenderer.send('destinations');
     };
     
-    fetchData()
+    sendData()
   }, []);
 
   const handleUpdate = (event,name, tarif) => {
@@ -34,7 +34,7 @@ export default function DestinationTarifList() {
       window.electron.ipcRenderer.on('destinations', (event, listOfDestinations) => {
         // Update state with received data
         setDestination(listOfDestinations);
-        
+        console.log(listOfDestinations)
         // Initialize newTariff array with default values
         const defaultTariff = Array.from({ length: listOfDestinations.length }, () => '');
         setNewTariff(defaultTariff);
@@ -50,7 +50,8 @@ export default function DestinationTarifList() {
   }, []);
 
   return (
-    <table className="table table-hover w-75">
+    <div className='tbl-container w-75 '>
+      <table className="table m-0 table-hover">
       <thead>
         <tr className="table-dark">
           <th className="text-center" scope="col">La Destination</th>
@@ -61,10 +62,10 @@ export default function DestinationTarifList() {
       <tbody className="table-group-divider">
         {destination.map((item, index) => (
           <tr key={index} className="table-light opacity-75">
-            <td className="text-center align-middle">{item._doc.name}</td>
-            <td className="text-center align-middle">{item._doc.tarif}</td>
+            <td className="text-center align-middle">{item.destinationCity}</td>
+            <td className="text-center align-middle">{item.tarif}</td>
             <td className="text-center">
-              <form id='tariflist' className="d-flex align-items-center w-50 justify-content-center" onSubmit={(event) => handleUpdate(event,item._doc.name, newTariff[index])}>
+              <form id='tariflist' className="d-flex align-items-center w-50 justify-content-center" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index])}>
                 <input 
                   type="number"
                   className="w-50 form-control bg-light text-dark"
@@ -73,10 +74,7 @@ export default function DestinationTarifList() {
                 />
                 <button 
                   className='btn btn-outline-success' 
-                  type="submit" 
-                  
-                  
-                  
+                  type="submit"   
                 >
                   Modifier
                 </button>
@@ -86,5 +84,6 @@ export default function DestinationTarifList() {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

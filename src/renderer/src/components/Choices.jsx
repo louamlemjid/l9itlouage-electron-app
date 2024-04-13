@@ -40,7 +40,7 @@ function Choices(){
             </button>
         </Link>
 
-        <Link to="/ticketliste" className="m-auto" >
+        <Link to="/menu/ticketliste" className="m-auto" >
             
             <button  id="menuform" >
                 <img src={ticket} alt="" width="70" className="m-auto" />
@@ -49,7 +49,7 @@ function Choices(){
             </button>
         </Link>
 
-        <Link to="/achatticket" className="m-auto" >
+        <Link to="/menu/achatticket" className="m-auto" >
             <button  id="menuform" >
                 <img src={ticketMachine} alt="" width="70" className="m-auto" />
                 <label  className="m-auto fs-6">Achat Ticket</label>

@@ -4,37 +4,32 @@ import {
   BrowserWindow,
   ipcMain ,
   dialog,
+  webContents,
   session,
   protocol,
   Menu,
   Tray,
 Notification} from 'electron'
+import cron from 'node-cron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {mongoose} from 'mongoose';
+import {nodemailer} from "nodemailer"
 import dotenv from 'dotenv';
 import { title } from 'process';
 dotenv.config({ path: join(__dirname, '../../../my-app/.env') });
+import { 
+  Louaje,
+  Station,
+  Passenger,
+  Ticket,
+  Elect,
+  Dest } from "./db"
 
 
 //mongodb architeture
 mongoose.connect(`${process.env.MONGODB_LINK}`);
-
-const electschema=new mongoose.Schema({
-  email:String,
-  password:String,
-  expireDate:Date,
-  paiment:Boolean,
-  inStation:Boolean
-})
-const Elect=mongoose.model("Elect",electschema);
-
-const destschema=new mongoose.Schema({
-  name:String,
-  tarif:Number,
-})
-const Dest=mongoose.model("Dest",destschema);
 
 const db = mongoose.connection;
 let mainWindow;
@@ -58,14 +53,20 @@ const childWindow=()=>{
   scanWindow.loadFile(join(__dirname, '../../src/renderer/scan.html'))
   
 }
-
+const ids=["65b8e21ea94eaa1a1b99a45","65b6b468a94eaa1a1b44c24e","65b6b44aa94eaa1a1b4493b7","65be5d7f23677124bb7d1660"]
+const cities=["bou-salem","mahdia","ariana","sousse"]
 async function handleFileOpen () {
   const { canceled, filePaths } = await dialog.showOpenDialog()
   if (!canceled) {
     return filePaths[0]
   }
 }
-
+const not=()=>{
+  notification=new Notification({
+    title:'l9itlouage',
+    body:`تم إعادة ضبط الأداءات لحالة الصفر فيرجى التثبت`,
+  icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
+}
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -114,11 +115,7 @@ function createWindow() {
       ]
     }
   ];
-  notification=new Notification({
-    title:'l9itlouage',
-    subtitle:"تم التحقق من الهوية",
-    body:"مرحبا بيك في التطبيق متاعنا ",
-  icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
+  
   
   tray=new Tray(join(__dirname,"../../src/renderer/src/assets/bus.png"))
   tray.on('click',()=>{
@@ -163,7 +160,20 @@ app.whenReady().then(() => {
     //do something
     try{
       console.log('working ..')
-      
+      cron.schedule('0 0 * * *', () => {
+        console.log('cron');
+        not()
+        notification.show()
+      });
+      // const ajouter=async(city,idLouage)=>{
+      //   const result2=await Station.findOneAndUpdate(
+      //     { email: "ala@gmail.com", "louages.destinationCity": city },
+      //     { $addToSet: { "louages.$.lougeIds": idLouage} },
+      //     { new: true } 
+      //   )
+      //   console.log(result2)
+      // }
+      // for (let i=0;i<4;i++){ajouter(cities[i],ids[i])}
       //add
       const ses = session.fromPartition('persist:name')
       
@@ -174,76 +184,117 @@ app.whenReady().then(() => {
       ]);
         console.log(result)
       })
-      // childWindow(mainWindow)
+      
+      
       //send data
-      ipcMain.on('get-city', async(event,data) => {
+      ipcMain.on('city-data', async(event,data) => {
         console.log("call for data is triggured")
-        // childWindow()
         console.log(ses.getUserAgent())
         console.log(`this is the message : ${data}`)
+
         const users=await Elect.find()
         console.log(users)
         event.sender.send('city-data', users);
         console.log("data is sent to react")
       });
+
+      ipcMain.on('achat-ticket',async(event,ticket)=>{
+        console.log("ticket est achete")
+      })
       //destination list
       ipcMain.on('destinations', async(event) => {
-        console.log("call for data is triggured in destinations")
-        // childWindow()
+        try{
+          console.log("call for data is triggured in destinations")
         
-        const destinations=await Dest.find()
-        console.log(destinations)
-        event.sender.send('destinations', destinations);
-        console.log("data is sent to react")
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          console.log(`les louages: ${louages}`)
+
+          event.sender.send('destinations',destinations.louages,louages)
+          console.log("data is sent to react")
+        }catch(error){
+          console.error(`error in destination route ${error}`)
+        }
       });
       //child
-      ipcMain.on('child-message', (event, ) => {
+      ipcMain.on('child-message', (event ) => {
         console.log('Message from child window:');
-        // Add your handling logic here
-        childWindow()
       });
       //updateDestination
       ipcMain.on('update-destination', async(event, data) => {
-        console.log('Message from destination tarif liste :',data.name, data.tarif);
-        if(data.name&&data.tarif){
-          const update=await Dest.updateOne({name:data.name},{tarif:data.tarif})
-          console.log(update)
-        }
-        const destinations=await Dest.find()
-        console.log(destinations)
-        event.sender.send('destinations', destinations);
-        console.log("data is sent to react")
-        // Add your handling logic here
+        try{
+          console.log('Message from destination tarif liste :',data.name, data.tarif);
+
+          if(data.name&&data.tarif){
+            const update = await Station.findOneAndUpdate(
+              { email: ses.getUserAgent(), "louages.destinationCity": data.name },
+              { $set: { "louages.$.tarif": data.tarif } },
+              { new: true });
+            console.log(update)
+          }
+
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          event.sender.send('destinations',destinations.louages)
+          console.log("data is sent to react")
+        }catch(error){console.log("error in update-destination route: ",error)}
       });
       //find
       ipcMain.on('find',async(event,data) => {
+        try{
         console.log(`find -- sent from sign in: ${data.email}`)
         
-        const result=await Elect.findOne({email:data.email,password:data.password});
-        console.log(result)
-        if(result){ses.setUserAgent(data.email)
-          notification.show()}
-        event.sender.send('find',result)
+        const result=await Station.findOne({email:data.email,password:data.password});
+        if(result){
+          console.log("valide data")
+          ses.setUserAgent(data.email)
+          // not(data.email)
+          // notification.show()
+        }
+        
+          event.sender.send('find',data)
+        }catch(error){console.error("error in signin/find route : ",error)}
       })
+
       //checkOut
-      ipcMain.on("check-out",async(event,louageEmail)=>{
-        console.log(`email sent from louage list component to checkout: ${louageEmail}`)
-        const checkOut=await Elect.updateOne({email:louageEmail},{inStation:false})
-        console.log(`louage est partie ?! : ${checkOut}`)
-        const users=await Elect.find()
-        console.log(users)
-        event.sender.send('city-data', users);
-        console.log("data is sent to react")
+      ipcMain.on("check-out",async(event,data)=>{
+        try{
+          console.log(`id sent from louage list component to checkout: ${data.id}`)
+
+          const checkOut=await Louaje.updateOne({_id:data.id},{$set:{status:false}})
+          console.log("louage est partie ?! :", checkOut)
+
+          const pullLouage=await Station.findOneAndUpdate(
+            { email: ses.getUserAgent(), "louages.destinationCity": data.cityName },
+            { $pull: { "louages.$.lougeIds": data.id } },
+            { new: true });
+          console.log("louage puled from station:",pullLouage)
+
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          console.log(`les louages: ${louages}`)
+          
+          event.sender.send('destinations',destinations.louages,louages)
+          console.log("data is sent to react")
+        }catch(error){console.error("error in check-out route: ",error)}
       })
+
       //paiment
       ipcMain.on("payment",async(event,louageEmail)=>{
-        console.log(`email sent from louage list component to pay: ${louageEmail}`)
-        const paiment=await Elect.updateOne({email:louageEmail},{paiment:true})
-        console.log(`louage a payé ?! : ${paiment}`)
-        const users=await Elect.find()
-        console.log(users)
-        event.sender.send('city-data', users);
-        console.log("data is sent to react")
+        try{
+          console.log(`email sent from louage list component to pay: ${louageEmail}`)
+          const paiment=await Elect.updateOne({email:louageEmail},{paiment:true})
+          console.log(`louage a payé ?! : ${paiment}`)
+          const users=await Elect.find()
+          console.log(users)
+          event.sender.send('city-data', users);
+          console.log("data is sent to react")
+        }catch(error){console.error("error in payment route: ",error)}
       })
       //update
       ipcMain.on('add',async(event,data) => {

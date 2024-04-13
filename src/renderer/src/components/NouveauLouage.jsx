@@ -29,14 +29,14 @@ function Form(){
               </div>
               <div class="input-group mb-3">
                 <span class="input-group-text bg-transparent text-dark" id="basic-addon1">Last name</span>
-                <input type="text" class="form-control bg-transparent text-dark" 
+                <input type="text" class="form-control bg-dark text-light" 
                 name="lastNameLouage" id="lastNameLouage" required 
                 placeholder="Last name"/>
               </div>
               <div className="input-group mb-3">
             <span className="input-group-text bg-transparent text-dark" id="basic-addon1">Numero Tel</span>
             <input type="number"
-              className="form-control bg-transparent text-dark "
+              className="form-control bg-dark text-light "
               placeholder="tel"
               name="tel" id="tel"
               pattern="[0-9]{8}"
@@ -50,7 +50,7 @@ function Form(){
           value={email}
           required
           id="email"
-          className="form-control bg-transparent text-dark "
+          className="form-control bg-dark text-light "
           onChange={(e) => setEmail(e.target.value)} />
       </div>
       <div class="input-group mb-3">
@@ -66,7 +66,7 @@ function Form(){
           <input 
           type="password"
           value={password}
-          className="form-control bg-transparent text-dark "
+          className="form-control bg-dark text-light "
           id="password"
           required
           placeholder='password'
@@ -77,7 +77,7 @@ function Form(){
             <span class="input-group-text bg-transparent text-dark" id="basic-addon1">date d'expiration</span>
             <input 
           type="date"
-          className="form-control bg-transparent text-dark "
+          className="form-control bg-dark text-light "
           value={expireDate}
           id="date"
           placeholder='date'
@@ -87,10 +87,10 @@ function Form(){
         
               <div class=" mb-3 matricule w-50 m-auto">
                 <div class="text-white matriculeInside ">
-                  <input class="text-dark bg-transparent m-auto fs-2 w-100 matrLeft" 
+                  <input class="bg-dark text-light m-auto fs-2 w-100 matrLeft" 
                   type="number" placeholder="240" name="matrLeft" id="matrLeft" required/>
                   <div class="text-white m-auto fs-2">تونس</div>
-                  <input className="text-dark bg-transparent m-auto fs-2 w-100 matrRight"
+                  <input className="bg-dark text-light m-auto fs-2 w-100 matrRight"
                    type="number" placeholder="9651" name="matrRight" id="matrRight" 
                    required/>
                 </div>

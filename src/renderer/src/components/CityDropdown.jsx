@@ -8,7 +8,7 @@ const CityDropdown = () => {
 
   return (
     <div >
-      <input type="text" list="custom-options" className="form-control bg-transparent text-dark"/>
+      <input type="text" list="custom-options" className="form-control bg-dark text-light"/>
       <CostumCityDropDown options={customOptions} />
     </div>
   );

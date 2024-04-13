@@ -35,15 +35,14 @@ const Signin = () => {
         setFormData({ ...formData, [name]: value });
     };
     useEffect(() => {
-        window.electron.ipcRenderer.on('find', (event, data) => {
+        window.electron.ipcRenderer.on('find', async(event, data) => {
           // Update state with received data
           console.log(`data recived in the react : ${data}`)
           data?setSate(true):null;
         });
         console.log(`the is the state inside useeffect : ${state}`)
-        if(state){
-            navigate("/menu")
-        }
+        state?navigate("/menu"):null
+        
         // Clean up event listener
         return () => {
           window.electron.ipcRenderer.removeAllListeners('find');

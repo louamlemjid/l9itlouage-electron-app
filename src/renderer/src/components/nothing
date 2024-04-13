@@ -14,11 +14,6 @@ export default function LouageList(){
       if(arrayLouages[i]._id==id){return arrayLouages[i].availableSeats}
     }
   }
-  const idToStatus=(id,arrayLouages)=>{
-    for (let i=0;i<arrayLouages.length;i++){
-      if(arrayLouages[i]._id==id){return arrayLouages[i].status}
-    }
-  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,9 +26,9 @@ export default function LouageList(){
 
     
   }, []);
-  const handleCheckOut = (data) => {
+  const handleCheckOut = (email) => {
     // Send POST request to main process with the email for check out
-    window.electron.ipcRenderer.send('check-out', data);
+    window.electron.ipcRenderer.send('check-out', email);
   };
 
   const handlePayment = (email) => {
@@ -69,27 +64,39 @@ export default function LouageList(){
           </tr>
         </thead>
         <tbody className="table-group-divider">
-  {cityData.map((destination, index) => (
-    <React.Fragment key={index}>
-      {destination.lougeIds.map((louage, secondIndex) => (
-        <tr key={secondIndex} className="opacity-75">
-          {secondIndex === 0 ? (
-            <td className="text-center align-middle" rowSpan={destination.lougeIds.length}>
-              {destination.destinationCity}
-            </td>
-          ) : null}
-          <td className="text-center align-middle">{idToMatricule(louage, louages)}</td>
-          <td className="text-center align-middle">{idToPlaces(louage, louages)}</td>
-          <td className="text-center"><button className='btn btn-primary' onClick={()=>handleCheckOut({id:louage,cityName:destination.destinationCity})} >faire sortir</button></td>
-          <td className={`text-center ${idToStatus(louage, louages) ? 'text-success' : 'text-danger'}`}>{idToStatus(louage, louages)?"في المحطة":"مش في المحطة"}</td>
-              {/* <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(louage)}>payer</button></td>
-              <td className={`text-center ${idToPay(louage, louages)? 'text-success' : 'text-danger'}`}>{idToPay(louage, louages)?"خالص":"مش خالص"}</td> */}
-        </tr>
-      ))}
-    </React.Fragment>
-  ))}
-</tbody>
-
+          {cityData.map((destination, index) => (
+            <tr key={index} className=" opacity-75">
+              <td className="text-center align-middle">{destination.destinationCity}</td>
+              
+              <td className="text-center align-middle">
+                
+                  {destination.lougeIds.map((louage, secondIndex) => (
+                    <div key={secondIndex} className="text-center " id='destinationX'>
+                     
+                      <p id='plaques' className='text-center '>{idToMatricule(louage,louages)}</p>
+                    </div>
+                    
+                  ))}
+                  
+              </td>
+              <td className="text-center align-middle">
+                
+                  {destination.lougeIds.map((louage1, secondIndex1) => (
+                    <div key={secondIndex1} className="text-center " >
+                     
+                      <p  className='text-center '>{idToPlaces(louage1,louages)}</p>
+                    </div>
+                    
+                  ))}
+                  
+              </td>
+              <td className="text-center"><button className='btn btn-primary' onClick={()=>handleCheckOut(destination._doc.email)} >faire sortir</button></td>
+              <td className={`text-center ${destination._doc.inStation === true ? 'text-success' : 'text-danger'}`}>{destination._doc.inStation?"في المحطة":"مش في المحطة"}</td>
+              <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(destination._doc.email)}>payer</button></td>
+              <td className={`text-center ${destination._doc.paiment === true ? 'text-success' : 'text-danger'}`}>{destination._doc.paiment?"خالص":"مش خالص"}</td>
+            </tr>
+          ))}
+        </tbody>
 
       </table>
       </div>

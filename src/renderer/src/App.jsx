@@ -9,6 +9,8 @@ import Signin from './components/Signin';
 import Signup from './components/Signup';
 import Navigation from './components/Navigation';
 import DestinationTarifList from './components/DestinationTarifList';
+import AchatTicket from './components/AchatTicket';
+import TicketList from './components/TicketList';
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function MenuRoutes(props) {
       <Route path="nouveaulouage" element={<NouveauLouage />} />
       <Route path="louageliste" element={<LouageList />} />
       <Route path="destinationtarifliste" element={<DestinationTarifList />} />
+      <Route path="achatticket" element={<AchatTicket />} />
+      <Route path="ticketliste" element={<TicketList />} />
     </Routes>
     </>
   );
