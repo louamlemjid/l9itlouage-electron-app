@@ -4,6 +4,7 @@ export default function AchatTicket() {
   const [destination, setDestination] = useState([]);
   const [newTariff, setNewTariff] = useState([]);
   
+
   useEffect(() => {
     const fetchData = () => {
       // Send request to main process to get city data
@@ -15,11 +16,9 @@ export default function AchatTicket() {
 
   const handleUpdate = (event,name,nombrePlaces) => {
     event.preventDefault();
-    // Send POST request to main process with the new tariff value for update
-    
+
     window.electron.ipcRenderer.send('destinations');
-    window.electron.ipcRenderer.send('achat-ticket');
-    // Fetch updated destinations after submitting the update
+    window.electron.ipcRenderer.send('achat-ticket')
     
   };
 

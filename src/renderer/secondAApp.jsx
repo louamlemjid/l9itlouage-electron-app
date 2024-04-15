@@ -16,11 +16,11 @@ const root=document.getElementById("root")
 root.innerHTML=`${header}
 <section ">
   <div id="entree" >
-    <img src="./src/assets/scan-qr-scanner.png" style="width:80px" alt="Image 1">
+    <img src="./src/assets/qrIcon.png" style="width:80px" alt="Image 1">
     <p>entree</p>
   </div>
   <div id="sortie" >
-    <img src="./src/assets/scan-qr-scanner.png" style="width:80px" alt="Image 2">
+    <img src="./src/assets/qrIcon.png" style="width:80px" alt="Image 2">
     <p>sortie</p>
   </div>
 </section>${footer}
@@ -29,25 +29,26 @@ root.innerHTML=`${header}
 const entree=document.getElementById("entree")
 const sortie=document.getElementById("sortie")
 
-const load=`
+const load=(e_s)=>{return`
 <div class="container">
-		<h1>Scan QR Codes</h1>
+		<h1>${e_s}</h1>
 		<div class="section">
 			<div id="my-qr-reader">
 			</div>
 		</div>
 	</div>
-`;
+`;}
 
 entree.addEventListener("click",()=>{
 
-  root.innerHTML=header+load+footer
-  scanQrcode('child-message')
+  root.innerHTML=header+load(`دخول`)+footer
+  scanQrcode('scan-entree')
   console.log('entree is clicked')
 })
 
 sortie.addEventListener("click",()=>{
-  root.innerHTML=load
+  root.innerHTML=header+load(`خروج`)+footer
+  scanQrcode('scan-sortie')
   console.log("sortie is clicked")
 })
 console.log("working")
@@ -76,7 +77,7 @@ domReady(function () {
       alert("Your QR code is: " + decodeText);
       
       // Send the QR code value to main process electron
-      window.electron.ipcRenderer.send(route)
+      window.electron.ipcRenderer.send(route,decodeText)
       
   }
 

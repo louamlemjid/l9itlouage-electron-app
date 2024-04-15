@@ -19,12 +19,6 @@ const Signin = () => {
         event.preventDefault(); // Prevent default form submission
         console.log('Form submitted:', formData);
         fetchData(formData);
-        
-        // Update state with received data
-        // if(data){
-        //     setSate(true);
-        //     console.log("data is fetched")
-        // }
         console.log(`the state :  ${state}`)
     };
     console.log('Component mounted');
@@ -48,24 +42,6 @@ const Signin = () => {
           window.electron.ipcRenderer.removeAllListeners('find');
         };
       }, [state]);
-    // useEffect(() => {
-        
-    // }, [])
-    
-        // if (fetchedData.fetchedEmail !== "" ) {
-        //     navigate('/menu'); // Navigate to the menu route
-        // }
-        
-        
-        // return () => {
-        //     // Clean up event listener to avoid memory leaks
-        //     window.electron.ipcRenderer.removeAllListeners('find');
-        // };
-    ; // Runs once on component mount
-
-   
-
-    
 
     return (
         <form onSubmit={handleSubmit} id="signin" className="w-75 btnn">

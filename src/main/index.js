@@ -40,9 +40,9 @@ const childWindow=()=>{
   const scanWindow = new BrowserWindow({
     width: 800,
     height: 700,
+    icon:join(__dirname,"../../src/renderer/src/assets/qrlogo.png"),
     show: true,
     autoHideMenuBar: true,
-    //without parent // Set parent window
     modal: true, // Make it modal if needed
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -218,10 +218,21 @@ app.whenReady().then(() => {
           console.error(`error in destination route ${error}`)
         }
       });
-      //child
-      ipcMain.on('child-message', (event ) => {
-        console.log('Message from child window:');
-      });
+      //add destination
+      ipcMain.on('add-destination',async(event,data)=>{
+        console.log(`new destination recieved: ${data}`)
+
+        const addDestination=await Station.findOneAndUpdate(
+          { email: ses.getUserAgent()},
+          { $push: { louages: { destinationCity: data.city, tarif:data.tarif } } },
+          { new: true } 
+        )
+        console.log(`new destination is added: ${addDestination}`)
+
+        event.sender.send('add-destination',addDestination?true:false)
+      })
+
+
       //updateDestination
       ipcMain.on('update-destination', async(event, data) => {
         try{
@@ -296,11 +307,51 @@ app.whenReady().then(() => {
           console.log("data is sent to react")
         }catch(error){console.error("error in payment route: ",error)}
       })
-      //update
-      ipcMain.on('add',async(event,data) => {
-        console.log(`update ipc 3: ${data}`)
-      //   
+      ipcMain.on('child-message',()=>{
+        childWindow()
       })
+
+      //update
+      ipcMain.on('scan-entree',async(event,id) => {
+        try{
+          console.log(`id recieved in scan-entree: ${id}`)
+
+          const louage=await Louaje.findById({_id:id})
+          console.log(`fetched louage from db: ${louage._id}`)
+          
+          const defaultPlaces = {
+              one: 'free',
+              two: 'free',
+              three: 'free',
+              four: 'free',
+              five: 'free',
+              six: 'free',
+              seven: 'free',
+              eight: 'free',
+              };
+
+          const stationInfo=await Station.findOne({email:ses.getUserAgent()})
+          console.log(stationInfo)
+          
+          const statusLouage=await Louaje.updateOne({id:louage.id},{$set:{places:defaultPlaces,status:true,cityDeparture:stationInfo.city,cityArrival:louage.cityDeparture}})
+          console.log(statusLouage)
+          
+          const result2=await Station.findOneAndUpdate(
+              { email: ses.getUserAgent(), "louages.destinationCity": louage.cityDeparture },
+              { $addToSet: { "louages.$.lougeIds": louage._id } },
+              { new: true } 
+          )
+          console.log(result2)
+
+        }catch(error){console.error("error in scan-entree route:",error)}
+      })
+
+      //scan sortie
+      ipcMain.on('scan-sortie',async(event,id)=>{
+        console.log("louage est sortie",id)
+      })
+
+
     }catch(error){
       console.error('error accured',error)
       console.log('connection to mongodb server failed')
@@ -308,7 +359,6 @@ app.whenReady().then(() => {
   })
   ipcMain.handle('dialog:openFile', handleFileOpen)
   createWindow()
-  // scan()
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
