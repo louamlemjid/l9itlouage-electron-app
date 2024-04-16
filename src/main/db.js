@@ -40,7 +40,7 @@ const stationschema=new mongoose.Schema({
           tarif:Number
       }
   ],
-  date:Date,
+  dateExpiration:Date,
   countLouaje:Number//nombres des louajes dans la stations
 });
 const Station=mongoose.model('Station',stationschema);
@@ -62,7 +62,8 @@ const ticketschema= new mongoose.Schema({
   travel:String,
   idP:String,
   idL:String,
-  idS:String
+  idS:String,
+  numberOfTickets:Number
 })
 const Ticket=mongoose.model('Ticket',ticketschema);
 

@@ -14,11 +14,11 @@ export default function AchatTicket() {
     fetchData()
   }, []);
 
-  const handleUpdate = (event,name,nombrePlaces) => {
+  const handleUpdate = (event,name,nombrePlaces,tarif) => {
     event.preventDefault();
 
     window.electron.ipcRenderer.send('destinations');
-    window.electron.ipcRenderer.send('achat-ticket',{name:name,nombrePlaces:nombrePlaces})
+    window.electron.ipcRenderer.send('achat-ticket',{name:name,nombrePlaces:nombrePlaces,tarif:tarif})
     
   };
 
@@ -67,7 +67,7 @@ export default function AchatTicket() {
             <td className="text-center align-middle">{item.tarif}</td>
             <td className="text-center align-middle">20</td>
             <td className="text-center">
-              <form id='tariflist' className="d-flex align-items-center w-75 justify-content-center" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index])}>
+              <form id='tariflist' className="d-flex align-items-center w-75 justify-content-center" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index],item.tarif)}>
                 <input 
                   type="number"
                   className="w-50 form-control bg-light text-dark"
