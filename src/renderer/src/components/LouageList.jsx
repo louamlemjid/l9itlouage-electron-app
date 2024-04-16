@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import pluslogo from './../assets/transport.png'
+import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 
 export default function LouageList(){
   const [cityData, setCityData] = useState([]);
@@ -69,6 +71,13 @@ export default function LouageList(){
           </tr>
         </thead>
         <tbody className="table-group-divider">
+        <tr className="table-light opacity-75 m-auto" >
+          <td colSpan={7} className="m-auto" id='imageLoc'>
+            <Link to="/menu/nouveaulouage" >
+              <img src={pluslogo} alt="" width={40} id='locimg' />
+            </Link>
+          </td>
+        </tr>
   {cityData.map((destination, index) => (
     <React.Fragment key={index}>
       {destination.lougeIds.map((louage, secondIndex) => (

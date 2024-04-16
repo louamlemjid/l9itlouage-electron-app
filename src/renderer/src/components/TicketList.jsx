@@ -1,3 +1,5 @@
+import receipt from './../assets/receipt.png'
+import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 const TicketList=()=>{
     return(
         <div className='tbl-container w-75 '>
@@ -12,6 +14,13 @@ const TicketList=()=>{
                 </tr>
             </thead>
             <tbody className="table-group-divider">
+            <tr className="table-light opacity-75 m-auto" >
+                <td colSpan={5} className="m-auto" id='imageLoc'>
+                    <Link to="/menu/achatticket" >
+                    <img src={receipt} alt="" width={40} id='locimg' />
+                    </Link>
+                </td>
+            </tr>
                 <tr className="table-light opacity-75">
                 <td  className="text-center">20</td>
                 <td className="text-center">20</td>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-
+import locLogo from './../assets/newLoc.png'
+import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 export default function DestinationTarifList() {
   const [destination, setDestination] = useState([]);
   const [newTariff, setNewTariff] = useState([]);
@@ -60,6 +61,13 @@ export default function DestinationTarifList() {
         </tr>
       </thead>
       <tbody className="table-group-divider">
+        <tr className="table-light opacity-75 m-auto" >
+          <td colSpan={3} className="m-auto" id='imageLoc'>
+            <Link to="/menu/nouvelledestination" >
+              <img src={locLogo} alt="" width={40} id='locimg' />
+            </Link>
+          </td>
+        </tr>
         {destination.map((item, index) => (
           <tr key={index} className="table-light opacity-75">
             <td className="text-center align-middle">{item.destinationCity}</td>

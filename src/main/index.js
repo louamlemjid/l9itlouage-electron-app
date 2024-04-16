@@ -55,6 +55,29 @@ const childWindow=()=>{
 }
 const ids=["65b8e21ea94eaa1a1b99a45","65b6b468a94eaa1a1b44c24e","65b6b44aa94eaa1a1b4493b7","65be5d7f23677124bb7d1660"]
 const cities=["bou-salem","mahdia","ariana","sousse"]
+//returns the free seats
+function getFreeSeatsList(listSeats){
+  const listFreeSeats=[];
+  for(const key in listSeats){
+      if(listSeats[key]=="free"){
+          listFreeSeats.push(key);
+      }
+  }
+  return listFreeSeats;
+}
+//returns the new seast in an array 
+function modifyObject(freeSeastList,listSeats){
+  const newObject={};
+  for(const key in listSeats){
+      if(freeSeastList.includes(key)){
+          newObject[key]="occ";
+      }else{
+          newObject[key]=listSeats[key];
+      }
+  }
+  return newObject;
+}
+
 async function handleFileOpen () {
   const { canceled, filePaths } = await dialog.showOpenDialog()
   if (!canceled) {
@@ -165,9 +188,11 @@ app.whenReady().then(() => {
         not()
         notification.show()
       });
+      
+     
       // const ajouter=async(city,idLouage)=>{
       //   const result2=await Station.findOneAndUpdate(
-      //     { email: "ala@gmail.com", "louages.destinationCity": city },
+      //     { email: ses.getUserAgent(), "louages.destinationCity": city },
       //     { $addToSet: { "louages.$.lougeIds": idLouage} },
       //     { new: true } 
       //   )
@@ -200,6 +225,39 @@ app.whenReady().then(() => {
 
       ipcMain.on('achat-ticket',async(event,ticket)=>{
         console.log("ticket est achete")
+
+        const firstLouage= await Station.aggregate([
+          { $match: { email: ses.getUserAgent() } },
+          { $unwind: "$louages" },
+          { $match: { "louages.destinationCity": ticket.name } },
+          { $limit: 1 },
+          { $project: { _id: 0, firstLouage: { $arrayElemAt: ["$louages.lougeIds", 0] } } }
+        ]);
+        console.log(firstLouage)
+        
+        const louage=await Louaje.findOne({id:firstLouage.firstLouage})
+        console.log(louage)
+
+        const louageList=louage.places
+
+        const listOfFreeSeats=getFreeSeatsList(louageList).slice(0,ticket.nombrePlaces)
+        console.log(listOfFreeSeats)
+
+        const newLouageList=modifyObject(listOfFreeSeats,louageList)
+        console.log(newLouageList)
+
+        const newAvailableSeats=louage.availableSeats-ticket
+
+        const updateLouage=await Louaje.updateOne({id:firstLouage.firstLouage},{$set:{places:newLouageList,availableSeats:newAvailableSeats}})
+        
+        const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+        console.log(destinations.louages)
+          
+        const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+        console.log(`les louages: ${louages}`)
+
+        event.sender.send('destinations',destinations.louages,louages)
+        console.log("data is sent to react")
       })
       //destination list
       ipcMain.on('destinations', async(event) => {
@@ -334,11 +392,11 @@ app.whenReady().then(() => {
           console.log(stationInfo)
           
           const statusLouage=await Louaje.updateOne({id:louage.id},{$set:{places:defaultPlaces,status:true,cityDeparture:stationInfo.city,cityArrival:louage.cityDeparture}})
-          console.log(statusLouage)
+          console.log(`status louage est change ${statusLouage}`)
           
           const result2=await Station.findOneAndUpdate(
               { email: ses.getUserAgent(), "louages.destinationCity": louage.cityDeparture },
-              { $addToSet: { "louages.$.lougeIds": louage._id } },
+              { $addToSet: { "louages.$.lougeIds": louage._id.toString() } },
               { new: true } 
           )
           console.log(result2)
@@ -348,6 +406,29 @@ app.whenReady().then(() => {
 
       //scan sortie
       ipcMain.on('scan-sortie',async(event,id)=>{
+        const louage=await Louaje.findById({_id:id})
+        console.log(`fetched louage from db: ${louage}`)
+
+
+        const firstLouage= await Station.aggregate([
+          { $match: { email: ses.getUserAgent() } },
+          { $unwind: "$louages" },
+          { $match: { "louages.destinationCity": louage.cityArrival } },
+          { $limit: 1 },
+          { $project: { _id: 0, firstLouage: { $arrayElemAt: ["$louages.lougeIds", 0] } } }
+        ]);
+        console.log(firstLouage)
+        
+        const result2=await Station.findOneAndUpdate(
+          { email:ses.getUserAgent(), "louages.destinationCity": "ariana" },
+          { $pull: { "louages.$.lougeIds": firstLouage[0].firstLouage } },
+          { new: true } 
+        )
+        console.log(result2)
+
+        const statusChange=await Louaje.updateOne({_id:id},{status:false})
+        console.log(`fetched louage from db: ${statusChange}`)
+
         console.log("louage est sortie",id)
       })
 

@@ -9,7 +9,7 @@
   padding: 20px;
   text-align: center;
   border: none;
-  transition-duration: 0.3s;
+  transition-duration: 400ms;
 }
 .matriculeInside{
   display: grid;
@@ -59,12 +59,12 @@ form{
   border-radius:5px ;
   padding: 20px;
   margin: 2vh auto;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.459);
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.582);
 }
 #menuform:hover{
   cursor:pointer;
-  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.25);
-  transition-duration: 0.3s;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.856);
+  transition-duration: 400ms;
 }
 .choices{
   display: grid;
@@ -196,3 +196,15 @@ footer{
   flex-direction: column;
   gap: 5px;
 } */
+#imageLoc{
+  height: 70px;
+  text-align: center;
+  padding: 9px;
+}
+#locimg:hover{
+  width: 50px;
+  transition-duration: 400ms;
+}
+#locimg{
+  transition-duration: 400ms;
+}

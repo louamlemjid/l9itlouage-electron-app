@@ -18,7 +18,7 @@ export default function AchatTicket() {
     event.preventDefault();
 
     window.electron.ipcRenderer.send('destinations');
-    window.electron.ipcRenderer.send('achat-ticket')
+    window.electron.ipcRenderer.send('achat-ticket',{name:name,nombrePlaces:nombrePlaces})
     
   };
 

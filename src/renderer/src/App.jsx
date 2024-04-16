@@ -30,7 +30,7 @@ function App() {
   );
 }
 
-function MenuRoutes(props) {
+function MenuRoutes() {
   return (
     <>
     <div id="links">
