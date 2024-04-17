@@ -356,26 +356,77 @@ app.whenReady().then(() => {
       //add
       const ses = session.fromPartition('persist:name')
 
-      ipcMain.on('add',async(event,data) => {
-        console.log(`ping ipc 1: ${data}`)
-        const result=await Elect.insertMany([
-          {email:data.email,password:data.password,expireDate:data.expireDate}
-      ]);
-        console.log(result)
+      ipcMain.on('add-louage',async(event,data) => {
+        try{
+          console.log(`new louage: ${data}`)
+        let {email,
+          password,
+          firstNameLouage,
+          lastNameLouage,
+          tel,
+          trajet1,
+          trajet2,
+          matrLeft,
+          matrRight,
+          codeStation}=data
+
+
+          let defaultPlaces = {
+            one: 'free',
+            two: 'free',
+            three: 'free',
+            four: 'free',
+            five: 'free',
+            six: 'free',
+            seven: 'free',
+            eight: 'free',
+        };
+        let matricule=matrLeft+"-Tunis-"+matrRight
+          
+        console.log(email,
+            password,
+            firstNameLouage,
+            lastNameLouage,
+            tel,
+            trajet1,
+            trajet2,
+            matrLeft,
+            matrRight,
+            codeStation)
+
+            let newLouage=await Louaje.updateOne({email:email.toLowerCase()},
+            {$set:{places:[defaultPlaces],
+              password:password,
+              matricule:matricule,
+              availableSeats:8,
+              name:firstNameLouage,
+              lastName:lastNameLouage,
+              email:email.toLowerCase(),
+              numeroTel:tel,
+              cityDeparture:trajet1,
+              cityArrival:trajet2}},
+            {upsert:true})
+            console.log(newLouage)
+// push to louageOfAllTime and louages
+        const updateStation = await Station.findOneAndUpdate(
+          { email: ses.getUserAgent() },
+          { $inc: { countLouaje: 1 }}
+        );
+        console.log(updateStation.city)
+
+        const update = await Station.findOneAndUpdate(
+          { email: ses.getUserAgent(), "louages.destinationCity": updateStation.city },
+          { $inc: { "louages.$.placesDisponibles": 8 } }, 
+          { new: true });
+        console.log("update",update)
+        }catch(error){
+          console.error("error in add-louage route: ",error)
+        }
+        
       })
       
       
-      //send data
-      ipcMain.on('city-data', async(event,data) => {
-        console.log("call for data is triggured")
-        console.log(ses.getUserAgent())
-        console.log(`this is the message : ${data}`)
-
-        const users=await Elect.find()
-        console.log(users)
-        event.sender.send('city-data', users);
-        console.log("data is sent to react")
-      });
+      
 
       ipcMain.on('achat-ticket',async(event,ticket)=>{
         try{
@@ -578,7 +629,7 @@ app.whenReady().then(() => {
           console.log(`louage a payé ?! : ${paiment}`)
           const users=await Elect.find()
           console.log(users)
-          event.sender.send('city-data', users);
+          event.sender.send('destinations', users);
           console.log("data is sent to react")
         }catch(error){console.error("error in payment route: ",error)}
       })

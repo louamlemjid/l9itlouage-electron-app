@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 
 export default function AchatTicket() {
+  
   const [destination, setDestination] = useState([]);
   const [newTariff, setNewTariff] = useState([]);
   const [louages,setLouages]=useState([])
@@ -40,6 +41,7 @@ export default function AchatTicket() {
         // Initialize newTariff array with default values
         const defaultTariff = Array.from({ length: listOfDestinations.length }, () => '');
         setNewTariff(defaultTariff);
+
       });
     };
     

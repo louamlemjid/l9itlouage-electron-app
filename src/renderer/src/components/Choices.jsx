@@ -19,13 +19,13 @@ function Choices(){
                 <label className="m-auto fs-6">Nouveau Louage</label>
             </button>
         </Link>
-        
-        <Link to="/menu/destinationtarifliste" className="m-auto" >
+        <Link to="/menu/achatticket" className="m-auto" >
             <button  id="menuform" >
-                <img src={dest} alt="" width="70" className="m-auto" />
-                <label  className="m-auto fs-6">Destinations Tarif Liste</label>
+                <img src={ticketMachine} alt="" width="70" className="m-auto" />
+                <label  className="m-auto fs-6">Achat Ticket</label>
             </button>
         </Link>
+        
 
         <Link to="/menu/nouvelledestination" className="m-auto">
             <button  id="menuform" >
@@ -50,10 +50,10 @@ function Choices(){
             </button>
         </Link>
 
-        <Link to="/menu/achatticket" className="m-auto" >
+        <Link to="/menu/destinationtarifliste" className="m-auto" >
             <button  id="menuform" >
-                <img src={ticketMachine} alt="" width="70" className="m-auto" />
-                <label  className="m-auto fs-6">Achat Ticket</label>
+                <img src={dest} alt="" width="70" className="m-auto" />
+                <label  className="m-auto fs-6">Destinations Tarif Liste</label>
             </button>
         </Link>
 

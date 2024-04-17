@@ -23,11 +23,13 @@
 #signuplink{
   text-align: end;
 }
+
 .paiment{
   display: flex;
   flex-direction: row;
   width: 80%;
   margin: 10vh auto;
+  gap: 20px;
 }
 #links{
   display: flex;

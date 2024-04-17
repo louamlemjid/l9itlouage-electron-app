@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
+import {useNavigate} from 'react-router-dom'
 import CityDropdown from './CityDropdown';
 
 function DestinationTarif(){
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     city: '',
     tarif: ''
@@ -32,6 +34,7 @@ function DestinationTarif(){
       // Update state with received data
       console.log(`data recived in the react : ${data}`)
       data?setSate(true):null;
+      data?navigate("/menu/destinationtarifliste"):null;
     });
     
     // Clean up event listener
