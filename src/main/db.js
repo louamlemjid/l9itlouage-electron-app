@@ -30,6 +30,7 @@ const stationschema=new mongoose.Schema({
   password:String,
   email:String,
   tel:Number,
+  louagesOdAllTime:[],
   city:String,
   _id:String,
   adress:String,//latitude and longitude
@@ -37,7 +38,8 @@ const stationschema=new mongoose.Schema({
       {
           destinationCity:String,
           lougeIds:[],
-          tarif:Number
+          tarif:Number,
+          placesDisponibles:Number
       }
   ],
   dateExpiration:Date,
@@ -63,7 +65,10 @@ const ticketschema= new mongoose.Schema({
   idP:String,
   idL:String,
   idS:String,
-  numberOfTickets:Number
+  numberOfTickets:Number,
+  matriculeLouage:String,
+  departure:String,
+  destination:String
 })
 const Ticket=mongoose.model('Ticket',ticketschema);
 

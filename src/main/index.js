@@ -11,6 +11,8 @@ import {
   Tray,
 Notification} from 'electron'
 import cron from 'node-cron'
+import { jsPDF } from "jspdf";
+import {fs} from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -27,7 +29,7 @@ import {
   Elect,
   Dest } from "./db"
 
-
+  const doc_file = new jsPDF();
 //mongodb architeture
 mongoose.connect(`${process.env.MONGODB_LINK}`);
 
@@ -36,6 +38,8 @@ let mainWindow;
 let scanWindow;
 let tray;
 let notification;
+let entreeAlert;
+let sortieAlert;
 const childWindow=()=>{
   const scanWindow = new BrowserWindow({
     width: 800,
@@ -53,8 +57,127 @@ const childWindow=()=>{
   scanWindow.loadFile(join(__dirname, '../../src/renderer/scan.html'))
   
 }
-const ids=["65b8e21ea94eaa1a1b99a45","65b6b468a94eaa1a1b44c24e","65b6b44aa94eaa1a1b4493b7","65be5d7f23677124bb7d1660"]
-const cities=["bou-salem","mahdia","ariana","sousse"]
+//recursive fct to buy tickets for achat-ticket( takes louages Ids and number of tickets)
+async function  buyTicket (ses,
+  louageIdsList,
+  numberOfTickets,
+  louageCollection,
+  ticketCollection,
+  stationCollection,
+  event,
+  ticketName,
+  ticketTarif){
+  if(numberOfTickets==0 || louageIdsList==[]){
+    return "cannot proceed for ticket shoping"
+  }else{
+    let firstId=louageIdsList[0]
+    let firstLouage=await louageCollection.findOne({"_id":firstId})
+    console.log("firstLouage: ",firstLouage)
+
+    let nombrePlacesDisponibles=firstLouage.availableSeats
+    console.log("nombre de places disponibles: ",nombrePlacesDisponibles)
+
+    if(nombrePlacesDisponibles>0){
+      if(nombrePlacesDisponibles-numberOfTickets>=0){
+        let placeList=firstLouage.places[0]
+        console.log("louageList: ",placeList)
+
+        let listOfFreeSeats=getFreeSeatsList(placeList).slice(0,numberOfTickets)
+        console.log("listOfFreeSeats: ",listOfFreeSeats)
+
+        let newLouageList=modifyObject(listOfFreeSeats,placeList)
+        console.log("newLouageList: ",newLouageList)
+
+        let newAvailableSeats=nombrePlacesDisponibles-numberOfTickets
+        let updateLouage=await louageCollection.updateOne(
+          {"_id":firstId},
+          {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
+        )
+        console.log("updateLouage: ",updateLouage)
+
+        let destinations=await stationCollection.findOne({email:ses.getUserAgent()}).lean()
+        console.log("destinations: ",destinations)
+          
+        let louages = await louageCollection.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+        console.log(`les louages: ${louages}`)
+        //ticket.name : destination
+
+        let addTicket=await ticketCollection.insertMany([
+          {dateOfReservation:new Date(),
+          idS:destinations._id.toString(),
+          idL:firstId,
+          departure:destinations.city,
+          destination:ticketName,
+          matriculeLouage:firstLouage.matricule,
+          numberOfTickets:numberOfTickets,
+          price:numberOfTickets*ticketTarif}])
+        console.log(addTicket)
+        
+        event.sender.send('destinations',destinations.louages,louages)
+        console.log("data is sent to react")
+        return "great"
+      }else{
+        let placeList=firstLouage.places[0]
+        console.log("louageList: ",placeList)
+
+        let listOfFreeSeats=getFreeSeatsList(placeList)
+        console.log("listOfFreeSeats: ",listOfFreeSeats)
+
+        let newLouageList=modifyObject(listOfFreeSeats,placeList)
+        console.log("newLouageList: ",newLouageList[0])
+
+        let newAvailableSeats=0
+        let updateLouage=await louageCollection.updateOne(
+          {"_id":firstId},
+          {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
+        )
+        console.log("updateLouage: ",updateLouage)
+
+        let destinations=await stationCollection.findOne({email:ses.getUserAgent()}).lean()
+        console.log("destinations: ",destinations)
+          
+        let louages = await louageCollection.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+        console.log(`les louages: ${louages}`)
+        //ticket.name : destination
+
+        let addTicket=await ticketCollection.insertMany([
+          {dateOfReservation:new Date(),
+          idS:destinations._id.toString(),
+          idL:firstId,
+          departure:destinations.city,
+          destination:ticketName,
+          matriculeLouage:firstLouage.matricule,
+          numberOfTickets:Math.abs(nombrePlacesDisponibles-numberOfTickets),
+          price:Math.abs(nombrePlacesDisponibles-numberOfTickets)*ticketTarif}])
+        console.log(addTicket)
+
+        event.sender.send('destinations',destinations.louages,louages)
+        console.log("data is sent to react")
+        return buyTicket(
+          ses,
+          louageIdsList.slice(1),
+          Math.abs(nombrePlacesDisponibles-numberOfTickets),
+          louageCollection,
+          ticketCollection,
+          stationCollection,
+          event,
+          ticketName,
+          ticketTarif)
+      }
+    }else{
+      return buyTicket(
+        ses,
+      louageIdsList.slice(1),
+      numberOfTickets,
+      louageCollection,
+      ticketCollection,
+      stationCollection,
+      event,
+      ticketName,
+      ticketTarif)
+    }
+  }
+}
 //returns the free seats
 function getFreeSeatsList(listSeats){
   let listFreeSeats=[];
@@ -87,7 +210,19 @@ async function handleFileOpen () {
 const not=()=>{
   notification=new Notification({
     title:'l9itlouage',
-    body:`تم إعادة ضبط الأداءات لحالة الصفر فيرجى التثبت`,
+    body:`تم تنزيل التذكرة عل الجهاز`,
+  icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
+}
+const entreeNotification=(plaque)=>{
+  entreeAlert=new Notification({
+    title:'l9itlouage',
+    body:`دخول اللواج ذات اللوحة ${plaque}`,
+  icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
+}
+const sortieNotification=(plaque)=>{
+  sortieAlert=new Notification({
+    title:'l9itlouage',
+    body:`دخول اللواج ذات اللوحة ${plaque}`,
   icon:join(__dirname,"../../src/renderer/src/assets/bus.png")})
 }
 function createWindow() {
@@ -183,12 +318,32 @@ app.whenReady().then(() => {
     //do something
     try{
       console.log('working ..')
-      cron.schedule('0 0 * * *', () => {
-        console.log('cron');
-        not()
-        notification.show()
-      });
       
+      // cron.schedule('0 0 * * *', () => {
+      //   console.log('cron');
+      //   not()
+      //   notification.show()
+      // });
+      // const os = require('os');
+      // const path = require('path');
+      // const desktopDir = path.join(os.homedir(), "Desktop");
+      // console.log(desktopDir);
+      // const doc_file= new jsPDF();
+
+      // doc_file.text("title", 40, 45);
+      // doc_file.text("stationId", 40, 98);
+      // doc_file.text("louageId", 40, 52);
+      // doc_file.text("currentDate", 40, 96);
+      // doc_file.text("price", 40, 45);
+      //a_doc_file
+     
+      // Pipe the PDF to the response stream
+      
+      
+      // doc_file.save(`${desktopDir}/test.pdf`);
+
+      
+
       // const ajouter=async(city,idLouage)=>{
       //   const result2=await Station.findOneAndUpdate(
       //     { email: ses.getUserAgent(), "louages.destinationCity": city },
@@ -200,7 +355,7 @@ app.whenReady().then(() => {
       // for (let i=0;i<4;i++){ajouter(cities[i],ids[i])}
       //add
       const ses = session.fromPartition('persist:name')
-      
+
       ipcMain.on('add',async(event,data) => {
         console.log(`ping ipc 1: ${data}`)
         const result=await Elect.insertMany([
@@ -226,53 +381,78 @@ app.whenReady().then(() => {
         try{
           console.log("ticket est achete",ticket)
 
-          let firstLouage= await Station.aggregate([
-            { $match: { email: ses.getUserAgent() } },
+          // let firstLouage= await Station.aggregate([
+          //   { $match: { email: ses.getUserAgent() } },
+          //   { $unwind: "$louages" },
+          //   { $match: { "louages.destinationCity": ticket.name } },
+          //   { $limit: 1 },
+          //   { $project: { _id: 0, firstLouage: { $arrayElemAt: ["$louages.lougeIds", 0] } } }
+          // ]);
+          // console.log(firstLouage)
+
+          let allLouages = await Station.aggregate([
+            { $match: { email: "ala@gmail.com" } },
             { $unwind: "$louages" },
-            { $match: { "louages.destinationCity": ticket.name } },
-            { $limit: 1 },
-            { $project: { _id: 0, firstLouage: { $arrayElemAt: ["$louages.lougeIds", 0] } } }
+            { $match: { "louages.destinationCity": "kelibia" } },
+            { $project: { _id: 0, allLouageIds: "$louages.lougeIds" } }
           ]);
-          console.log(firstLouage)
-          firstLouage=firstLouage[0]
-          const louage=await Louaje.findOne({"_id":firstLouage.firstLouage})
-          console.log(`louage trouve: ${louage} ;;; ${louage.availableSeats}`)
+          console.log(allLouages[0].allLouageIds) 
 
-          if(louage.availableSeats>=ticket.nombrePlaces){
-            const louageList=louage.places[0]
-            console.log("louageList: ",louageList)
-            const listOfFreeSeats=getFreeSeatsList(louageList).slice(0,ticket.nombrePlaces)
-            console.log("listOfFreeSeats: ",listOfFreeSeats)
+          buyTicket(
+            ses,
+            allLouages[0].allLouageIds,
+            ticket.nombrePlaces,
+            Louaje,
+            Ticket,
+            Station,
+            event,
+            ticket.name,
+            ticket.tarif
+          )
+          
+          // firstLouage=firstLouage[0]
+          // const louage=await Louaje.findOne({"_id":firstLouage.firstLouage})
+          // console.log(`louage trouve: ${louage} ;;; ${louage.availableSeats}`)
+
+          // if(louage.availableSeats>=ticket.nombrePlaces){
+          //   const louageList=louage.places[0]
+          //   console.log("louageList: ",louageList)
+          //   const listOfFreeSeats=getFreeSeatsList(louageList).slice(0,ticket.nombrePlaces)
+          //   console.log("listOfFreeSeats: ",listOfFreeSeats)
   
-            const newLouageList=modifyObject(listOfFreeSeats,louageList)
-            console.log("newLouageList: ",newLouageList[0])
+          //   const newLouageList=modifyObject(listOfFreeSeats,louageList)
+          //   console.log("newLouageList: ",newLouageList[0])
   
-            const newAvailableSeats=louage.availableSeats-ticket.nombrePlaces
+          //   const newAvailableSeats=louage.availableSeats-ticket.nombrePlaces
   
-            const updateLouage=await Louaje.updateOne(
-              {"_id":firstLouage.firstLouage},
-              {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
-            )
-            console.log("updateLouage: ",updateLouage)
+          //   const updateLouage=await Louaje.updateOne(
+          //     {"_id":firstLouage.firstLouage},
+          //     {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
+          //   )
+          //   console.log("updateLouage: ",updateLouage)
   
-            const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
-            console.log("destinations.louages: ",destinations.id)
+          //   const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          //   console.log("destinations.louages: ",destinations.id)
               
-            const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
-            console.log(`les louages: ${louages}`)
+          //   const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          //   console.log(`les louages: ${louages}`)
+          //   //ticket.name : destination
+          //   const addTicket=await Ticket.insertMany([
+          //     {dateOfReservation:new Date(),
+          //     idS:destinations.toString(),
+          //     idL:firstLouage.firstLouage,
+          //     departure:destinations.city,
+          //     destination:ticket.name,
+          //     matriculeLouage:louage.matricule,
+          //     numberOfTickets:ticket.nombrePlaces,
+          //     price:ticket.nombrePlaces*ticket.tarif}])
+          //   console.log(addTicket)
   
-            const addTicket=await Ticket.insertMany([
-              {dateOfReservation:new Date(),
-              idS:destinations._id.toString(),
-              idL:firstLouage.firstLouage,
-              numberOfTickets:ticket.nombrePlaces,
-              price:ticket.nombrePlaces*ticket.tarif}])
-            console.log(addTicket)
-  
-            event.sender.send('destinations',destinations.louages,louages)
-            console.log("data is sent to react")
-          }
-
+          //   event.sender.send('destinations',destinations.louages,louages)
+          //   console.log("data is sent to react")
+          // }
+          not
+          notification.show()
         }catch(error){
           console.error(`error in achat-ticket route ${error}`)
         }
@@ -315,7 +495,10 @@ app.whenReady().then(() => {
       //list of tickets
       ipcMain.on('tickets',async(event)=>{
         try{
-          const tickets=await Ticket.find({}).lean().sort({dateOfReservation:-1})
+          let stationId=await Station.findOne({email:ses.getUserAgent()})
+          console.log(stationId.id)
+
+          let tickets=await Ticket.find({idS:stationId.id}).lean().sort({dateOfReservation:-1})
           console.log(`les tickets: ${tickets}`)
         event.sender.send('tickets',tickets)
         }catch(error){
@@ -354,11 +537,11 @@ app.whenReady().then(() => {
         if(result){
           console.log("valide data")
           ses.setUserAgent(data.email)
-          // not(data.email)
-          // notification.show()
+          
         }
         
           event.sender.send('find',data)
+          
         }catch(error){console.error("error in signin/find route : ",error)}
       })
 
@@ -409,8 +592,11 @@ app.whenReady().then(() => {
           console.log(`id recieved in scan-entree: ${id}`)
 
           const louage=await Louaje.findById({_id:id})
-          console.log(`fetched louage from db: ${louage._id}`)
-          
+          console.log(`fetched louage from db: ${louage}`)
+
+          entreeNotification(louage.matricule)
+          entreeAlert.show()
+
           const defaultPlaces = {
               one: 'free',
               two: 'free',
@@ -430,7 +616,7 @@ app.whenReady().then(() => {
           
           const result2=await Station.findOneAndUpdate(
               { email: ses.getUserAgent(), "louages.destinationCity": louage.cityDeparture },
-              { $addToSet: { "louages.$.lougeIds": louage._id.toString() } },
+              { $addToSet: { "louages.$.lougeIds": louage.toString() } },
               { new: true } 
           )
           console.log(result2)
@@ -443,6 +629,8 @@ app.whenReady().then(() => {
         const louage=await Louaje.findById({_id:id})
         console.log(`fetched louage from db: ${louage}`)
 
+        sortieNotification(louage.matricule)
+        sortieAlert.show()
 
         const firstLouage= await Station.aggregate([
           { $match: { email: ses.getUserAgent() } },

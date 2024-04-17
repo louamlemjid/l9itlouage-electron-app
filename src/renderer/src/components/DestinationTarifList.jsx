@@ -73,7 +73,7 @@ export default function DestinationTarifList() {
             <td className="text-center align-middle">{item.destinationCity}</td>
             <td className="text-center align-middle">{item.tarif}</td>
             <td className="text-center">
-              <form id='tariflist' className="d-flex align-items-center w-50 justify-content-center" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index])}>
+              <form id='tariflist' className="d-flex align-items-center w-50 justify-content-center m-auto" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index])}>
                 <input 
                   type="number"
                   className="w-50 form-control bg-light text-dark"

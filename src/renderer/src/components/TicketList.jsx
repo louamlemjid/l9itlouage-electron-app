@@ -5,7 +5,7 @@ const TicketList=()=>{
     const [listOfTickets,setListOfTickets]=useState([])
 
     const fullDate=(date)=>{
-        return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`
+        return `${date.getDate()}/${date.getMonth()}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}`
     }
     useEffect(() => {
         const fetchData = async () => {
@@ -34,7 +34,8 @@ const TicketList=()=>{
             <thead>
                 <tr className="table-dark bg-danger">
                     <th className="text-center" scope="col">التاريخ</th>
-                    <th className="text-center" scope="col">التذكرة</th>
+                    <th className="text-center" scope="col">الوجهة</th>
+                    <th className="text-center" scope="col">اللواج</th>
                     <th className="text-center" scope="col">العدد</th>
                     <th className="text-center" scope="col">السعر</th>
                 </tr>
@@ -51,7 +52,8 @@ const TicketList=()=>{
                 
                 <tr key={index} className="table-light ">
                     <td  className="text-center">{fullDate(ticket.dateOfReservation)}</td>
-                    <td className="text-center">{ticket.idL}</td>
+                    <td className="text-center">{ticket.destination}</td>
+                    <td className="text-center">{ticket.matriculeLouage}</td>
                     <td className="text-center">{ticket.numberOfTickets}</td>
                     <td className="text-center">{ticket.price}</td>
                 

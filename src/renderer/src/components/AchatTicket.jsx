@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
+
 export default function AchatTicket() {
   const [destination, setDestination] = useState([]);
   const [newTariff, setNewTariff] = useState([]);
-  
+  const [louages,setLouages]=useState([])
+
 
   useEffect(() => {
     const fetchData = () => {
@@ -31,10 +33,10 @@ export default function AchatTicket() {
   // Listen for response from main process
   useEffect(() => {
     const fetchData = () => {
-      window.electron.ipcRenderer.on('destinations', (event, listOfDestinations) => {
+      window.electron.ipcRenderer.on('destinations', (event, listOfDestinations,louages) => {
         // Update state with received data
         setDestination(listOfDestinations);
-        
+        setLouages(louages)
         // Initialize newTariff array with default values
         const defaultTariff = Array.from({ length: listOfDestinations.length }, () => '');
         setNewTariff(defaultTariff);
@@ -65,9 +67,9 @@ export default function AchatTicket() {
           <tr key={index} className="table-light opacity-75">
             <td className="text-center align-middle">{item.destinationCity}</td>
             <td className="text-center align-middle">{item.tarif}</td>
-            <td className="text-center align-middle">20</td>
+            <td className="text-center align-middle">{}</td>
             <td className="text-center">
-              <form id='tariflist' className="d-flex align-items-center w-75 justify-content-center" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index],item.tarif)}>
+              <form id='tariflist' className="d-flex align-items-center w-75 justify-content-center m-auto" onSubmit={(event) => handleUpdate(event,item.destinationCity, newTariff[index],item.tarif)}>
                 <input 
                   type="number"
                   className="w-50 form-control bg-light text-dark"
