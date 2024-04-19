@@ -6,12 +6,6 @@ const louajeschema=new mongoose.Schema({
   lastName:String,
   email:String,
   password:String,
-  tax:[
-    {
-      dayOfPaiment:{ type: Date, default: Date.now },
-      paid: { type: Boolean, default: false }
-    }
-  ],
   model:String,//toyota..
   matricule:String,//240 Tunis 2039
   numeroTel:Number,
@@ -29,8 +23,9 @@ const stationschema=new mongoose.Schema({
   name:String,
   password:String,
   email:String,
+  codeStation:String,
   tel:Number,
-  louagesOdAllTime:[],
+  louagesOfAllTime:[],
   city:String,
   _id:String,
   adress:String,//latitude and longitude
@@ -41,6 +36,12 @@ const stationschema=new mongoose.Schema({
           tarif:Number,
           placesDisponibles:Number
       }
+  ],
+  tax:[
+    {
+      dayOfPaiment:Date,
+      paidLouages:[]
+    }
   ],
   dateExpiration:Date,
   countLouaje:Number//nombres des louajes dans la stations

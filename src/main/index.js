@@ -11,6 +11,7 @@ import {
   Tray,
 Notification} from 'electron'
 import cron from 'node-cron'
+import randomString from 'randomized-string'
 import { jsPDF } from "jspdf";
 import {fs} from 'fs'
 import { join } from 'path'
@@ -200,7 +201,10 @@ function modifyObject(freeSeastList,listSeats){
   }
   return newObject;
 }
+// gerate code for station every day
+const generateCodeStation=()=>{
 
+}
 async function handleFileOpen () {
   const { canceled, filePaths } = await dialog.showOpenDialog()
   if (!canceled) {
@@ -296,17 +300,10 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  
-  // Set app user model id for windows
+
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -319,11 +316,55 @@ app.whenReady().then(() => {
     try{
       console.log('working ..')
       
-      // cron.schedule('0 0 * * *', () => {
-      //   console.log('cron');
-      //   not()
-      //   notification.show()
-      // });
+      cron.schedule('1 0 * * * *', async() => {
+        console.log('passed midnight');
+        if(ses.getUserAgent()){
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            {
+                $group: {
+                    _id: "$_id",
+                    tax: { $push: "$tax" }
+                }
+            },
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax[0]==undefined)
+        
+        if(listtax[0]==undefined ){
+          const addtax=await Station.findOneAndUpdate(
+                  { email: ses.getUserAgent()},
+                  { $addToSet: { tax: { dayOfPaiment: new Date()} },$set: { codeStation: randomString.generate(6) } },
+                  { new: true } 
+                )
+                console.log("undif*ined test",addtax)
+        }else{
+          console.log('else triggured')
+          let fetchedDate=new Date(listtax[0].tax[0].dayOfPaiment.getFullYear(),
+          listtax[0].tax[0].dayOfPaiment.getMonth(),
+          listtax[0].tax[0].dayOfPaiment.getDate())
+          
+          let today=new Date(new Date().getFullYear(),
+          new Date().getMonth(),
+          new Date().getDate())
+  
+          if(today.getTime()>fetchedDate.getTime() )
+          {
+            const addtax=await Station.findOneAndUpdate(
+              { email: ses.getUserAgent()},
+              { $push: { tax: { dayOfPaiment: new Date()} },$set: { codeStation: randomString.generate(6) } },
+              { new: true } 
+            )
+            console.log("new day, new money, monet money money !",addtax)
+          }
+        }
+        }
+        not()
+        notification.show()
+      });
+
       // const os = require('os');
       // const path = require('path');
       // const desktopDir = path.join(os.homedir(), "Desktop");
@@ -341,18 +382,8 @@ app.whenReady().then(() => {
       
       
       // doc_file.save(`${desktopDir}/test.pdf`);
-
       
 
-      // const ajouter=async(city,idLouage)=>{
-      //   const result2=await Station.findOneAndUpdate(
-      //     { email: ses.getUserAgent(), "louages.destinationCity": city },
-      //     { $addToSet: { "louages.$.lougeIds": idLouage} },
-      //     { new: true } 
-      //   )
-      //   console.log(result2)
-      // }
-      // for (let i=0;i<4;i++){ajouter(cities[i],ids[i])}
       //add
       const ses = session.fromPartition('persist:name')
 
@@ -394,6 +425,8 @@ app.whenReady().then(() => {
             matrRight,
             codeStation)
 
+          let checkCode=await Station.findOne({email:ses.getUserAgent()})
+          if(checkCode.codeStation==codeStation){
             let newLouage=await Louaje.updateOne({email:email.toLowerCase()},
             {$set:{places:[defaultPlaces],
               password:password,
@@ -407,7 +440,25 @@ app.whenReady().then(() => {
               cityArrival:trajet2}},
             {upsert:true})
             console.log(newLouage)
-// push to louageOfAllTime and louages
+
+              let louageId=await Louaje.findOne({email:email.toLowerCase()})
+              console.log(louageId)
+
+
+            const addLouage=await Station.findOneAndUpdate(
+              { email: ses.getUserAgent()},
+              { $addToSet: { louagesOfAllTime: louageId._id.toString() }},
+              { new: true } 
+            )
+            console.log("addlouage: ",addLouage)
+
+            const addLouageToDestination=await Station.findOneAndUpdate(
+              { email: ses.getUserAgent(), "louages.destinationCity": addLouage.city },
+              { $addToSet: { "louages.$.lougeIds": louageId._id.toString() } },
+              { new: true } 
+          )
+          console.log(addLouageToDestination)
+
         const updateStation = await Station.findOneAndUpdate(
           { email: ses.getUserAgent() },
           { $inc: { countLouaje: 1 }}
@@ -419,6 +470,9 @@ app.whenReady().then(() => {
           { $inc: { "louages.$.placesDisponibles": 8 } }, 
           { new: true });
         console.log("update",update)
+          }
+
+            
         }catch(error){
           console.error("error in add-louage route: ",error)
         }
@@ -431,15 +485,6 @@ app.whenReady().then(() => {
       ipcMain.on('achat-ticket',async(event,ticket)=>{
         try{
           console.log("ticket est achete",ticket)
-
-          // let firstLouage= await Station.aggregate([
-          //   { $match: { email: ses.getUserAgent() } },
-          //   { $unwind: "$louages" },
-          //   { $match: { "louages.destinationCity": ticket.name } },
-          //   { $limit: 1 },
-          //   { $project: { _id: 0, firstLouage: { $arrayElemAt: ["$louages.lougeIds", 0] } } }
-          // ]);
-          // console.log(firstLouage)
 
           let allLouages = await Station.aggregate([
             { $match: { email: "ala@gmail.com" } },
@@ -461,48 +506,7 @@ app.whenReady().then(() => {
             ticket.tarif
           )
           
-          // firstLouage=firstLouage[0]
-          // const louage=await Louaje.findOne({"_id":firstLouage.firstLouage})
-          // console.log(`louage trouve: ${louage} ;;; ${louage.availableSeats}`)
-
-          // if(louage.availableSeats>=ticket.nombrePlaces){
-          //   const louageList=louage.places[0]
-          //   console.log("louageList: ",louageList)
-          //   const listOfFreeSeats=getFreeSeatsList(louageList).slice(0,ticket.nombrePlaces)
-          //   console.log("listOfFreeSeats: ",listOfFreeSeats)
-  
-          //   const newLouageList=modifyObject(listOfFreeSeats,louageList)
-          //   console.log("newLouageList: ",newLouageList[0])
-  
-          //   const newAvailableSeats=louage.availableSeats-ticket.nombrePlaces
-  
-          //   const updateLouage=await Louaje.updateOne(
-          //     {"_id":firstLouage.firstLouage},
-          //     {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
-          //   )
-          //   console.log("updateLouage: ",updateLouage)
-  
-          //   const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
-          //   console.log("destinations.louages: ",destinations.id)
-              
-          //   const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
-          //   console.log(`les louages: ${louages}`)
-          //   //ticket.name : destination
-          //   const addTicket=await Ticket.insertMany([
-          //     {dateOfReservation:new Date(),
-          //     idS:destinations.toString(),
-          //     idL:firstLouage.firstLouage,
-          //     departure:destinations.city,
-          //     destination:ticket.name,
-          //     matriculeLouage:louage.matricule,
-          //     numberOfTickets:ticket.nombrePlaces,
-          //     price:ticket.nombrePlaces*ticket.tarif}])
-          //   console.log(addTicket)
-  
-          //   event.sender.send('destinations',destinations.louages,louages)
-          //   console.log("data is sent to react")
-          // }
-          not
+          not()
           notification.show()
         }catch(error){
           console.error(`error in achat-ticket route ${error}`)
@@ -519,7 +523,16 @@ app.whenReady().then(() => {
           const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
           console.log(`les louages: ${louages}`)
 
-          event.sender.send('destinations',destinations.louages,louages)
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax[0].tax[0]._id.toString())
+        
+          event.sender.send('destinations',destinations.louages,louages,listtax[0]?listtax[0].tax[0].paidLouages:[])
           console.log("data is sent to react")
         }catch(error){
           console.error(`error in destination route ${error}`)
@@ -581,18 +594,54 @@ app.whenReady().then(() => {
       //find
       ipcMain.on('find',async(event,data) => {
         try{
-        console.log(`find -- sent from sign in: ${data.email}`)
+        
         
         const result=await Station.findOne({email:data.email,password:data.password}
           /*,{dateExpiration:{ $gt:new Date() }} */);
         if(result){
           console.log("valide data")
           ses.setUserAgent(data.email)
+          event.sender.send('find',true)
           
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax[0]==undefined)
+        
+        if(listtax[0]==undefined ){
+          const addtax=await Station.findOneAndUpdate(
+                  { email: ses.getUserAgent()},
+                  { $addToSet: { tax: { dayOfPaiment: new Date()} },$set: { codeStation: randomString.generate(6) } },
+                  { new: true } 
+                )
+                console.log("undif*ined test",addtax)
+        }else{
+          console.log('else triggured')
+          let fetchedDate=new Date(listtax[0].tax[0].dayOfPaiment.getFullYear(),
+          listtax[0].tax[0].dayOfPaiment.getMonth(),
+          listtax[0].tax[0].dayOfPaiment.getDate())
+          
+          let today=new Date(new Date().getFullYear(),
+          new Date().getMonth(),
+          new Date().getDate())
+  
+          if(today.getTime()>fetchedDate.getTime() )
+          {
+            const addtax=await Station.findOneAndUpdate(
+              { email: ses.getUserAgent()},
+              { $push: { tax: { dayOfPaiment: new Date()} },$set: { codeStation: randomString.generate(6) } },
+              { new: true } 
+            )
+            console.log("new day, new money, monet money money !",addtax)
+          
+          }
+        }
         }
         
-          event.sender.send('find',data)
-          
         }catch(error){console.error("error in signin/find route : ",error)}
       })
 
@@ -622,15 +671,41 @@ app.whenReady().then(() => {
       })
 
       //paiment
-      ipcMain.on("payment",async(event,louageEmail)=>{
+      ipcMain.on("paiment",async(event,louageId)=>{
         try{
-          console.log(`email sent from louage list component to pay: ${louageEmail}`)
-          const paiment=await Elect.updateOne({email:louageEmail},{paiment:true})
-          console.log(`louage a payé ?! : ${paiment}`)
-          const users=await Elect.find()
-          console.log(users)
-          event.sender.send('destinations', users);
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          console.log(`les louages: ${louages}`)
+
+          let taxId=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log("taxId; " ,taxId)
+
+          let louagePaiment=await Station.findOneAndUpdate(
+            { email: ses.getUserAgent(), "tax._id": taxId[0].tax[0]._id.toString() },
+            { $addToSet: { "tax.$.paidLouages": louageId } },
+            { new: true } 
+        )
+        console.log(louagePaiment)
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax)
+        
+          event.sender.send('destinations',destinations.louages,louages,listtax[0]?listtax[0].tax[0].paidLouages:[])
           console.log("data is sent to react")
+          
         }catch(error){console.error("error in payment route: ",error)}
       })
       ipcMain.on('child-message',()=>{

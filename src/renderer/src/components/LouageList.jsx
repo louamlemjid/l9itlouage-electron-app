@@ -5,11 +5,19 @@ import { BrowserRouter ,Routes, Route, Link } from 'react-router-dom';
 export default function LouageList(){
   const [cityData, setCityData] = useState([]);
   const [louages, setLouages] = useState([]);
+  const [paidLouages,setPaidLouages]=useState([])
 
   const idToMatricule=(id,arrayLouages)=>{
     for (let i=0;i<arrayLouages.length;i++){
       if(arrayLouages[i]._id==id){return arrayLouages[i].matricule}
     }
+  }
+  const idInPaidList=(id,arrayLouages)=>{
+    for (let i=0;i<arrayLouages.length;i++){
+      if(arrayLouages[i]==id){return true}else{
+        
+      }
+    }return false
   }
   const idToPlaces=(id,arrayLouages)=>{
     for (let i=0;i<arrayLouages.length;i++){
@@ -38,17 +46,18 @@ export default function LouageList(){
     window.electron.ipcRenderer.send('check-out', data);
   };
 
-  const handlePayment = (email) => {
+  const handlePayment = (id) => {
     // Send POST request to main process with the email for payment
-    window.electron.ipcRenderer.send('payment', email);
+    window.electron.ipcRenderer.send('paiment', id);
   };
   // Listen for response from main process
   useEffect(() => {
-    window.electron.ipcRenderer.on('destinations', (event, data,listeouages) => {
+    window.electron.ipcRenderer.on('destinations', (event, data,listeouages,paidLouagesList) => {
       // Update state with received data
       setCityData(data);
       setLouages(listeouages)
-      console.log(listeouages)
+      setPaidLouages(paidLouagesList)
+      console.log(listeouages,"paidlouages: ",paidLouagesList)
     });
 
     // Clean up event listener
@@ -91,8 +100,8 @@ export default function LouageList(){
           <td className="text-center align-middle">{idToPlaces(louage, louages)}</td>
           <td className="text-center"><button className='btn btn-primary' onClick={()=>handleCheckOut({id:louage,cityName:destination.destinationCity})} >faire sortir</button></td>
           <td className={`text-center ${idToStatus(louage, louages) ? 'text-success' : 'text-danger'}`}>{idToStatus(louage, louages)?"في المحطة":"مش في المحطة"}</td>
-              {/* <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(louage)}>payer</button></td>
-              <td className={`text-center ${idToPay(louage, louages)? 'text-success' : 'text-danger'}`}>{idToPay(louage, louages)?"خالص":"مش خالص"}</td> */}
+              <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(louage)} hidden={idInPaidList(louage, paidLouages)? true : false} >payer</button></td>
+              <td className={`text-center ${idInPaidList(louage, paidLouages)? 'text-success' : 'text-danger'}`}>{idInPaidList(louage, paidLouages)?"خالص":"مش خالص"}</td>
         </tr>
       ))}
     </React.Fragment>
