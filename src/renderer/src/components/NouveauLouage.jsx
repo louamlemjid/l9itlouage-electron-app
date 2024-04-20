@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import {useNavigate} from 'react-router-dom'
 import CityDropdown from "./CityDropdown"
 
@@ -15,13 +15,26 @@ function NouveauLouage(){
     matrRight:'',
     codeStation:''
 });
+  const [code,setCode]=useState("")
 
   const addLouage = async (newLouage) => {
     // Send request to main process to get city data
     window.electron.ipcRenderer.send('add-louage', newLouage);
   };
-
+  useEffect(() => {
+    const fetchData = async () => {
+      window.electron.ipcRenderer.send('code-station');
+    };
+    fetchData();
+  }, []);
   
+  useEffect(() => {
+    window.electron.ipcRenderer.on('code-station', (event,fetchedCode) => {
+      setCode(fetchedCode)
+    });
+    
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     addLouage(formData);
@@ -84,11 +97,11 @@ function NouveauLouage(){
           onChange={handleChange} />
       </div>
       <div class="input-group mb-3">
-                <span class="input-group-text bg-transparent text-dark" id="basic-addon1">trajet1</span>
+                <span class="input-group-text bg-transparent text-dark" id="basic-addon1">depart</span>
                 <CityDropdown name="trajet1" value={formData.trajet1} onChange={handleChange}/>
               </div>
               <div class="input-group mb-3">
-                <span class="input-group-text bg-transparent text-dark" id="basic-addon1">trajet2</span>
+                <span class="input-group-text bg-transparent text-dark" id="basic-addon1">destination</span>
                 <CityDropdown name="trajet2" value={formData.trajet2} onChange={handleChange}/>
               </div>
       <div className="input-group mb-3">
@@ -103,7 +116,9 @@ function NouveauLouage(){
           placeholder='password'
           onChange={handleChange} />
       </div>  
-      
+      <div>
+        <p className='text-danger'>Code confidentiel: {code}</p>
+      </div>
         <div class="input-group mb-3">
             <span class="input-group-text bg-transparent text-dark" id="basic-addon1">codeStation</span>
             <input 

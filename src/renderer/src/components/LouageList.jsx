@@ -99,7 +99,7 @@ export default function LouageList(){
           <td className="text-center align-middle">{idToMatricule(louage, louages)}</td>
           <td className="text-center align-middle">{idToPlaces(louage, louages)}</td>
           <td className="text-center"><button className='btn btn-primary' onClick={()=>handleCheckOut({id:louage,cityName:destination.destinationCity})} >faire sortir</button></td>
-          <td className={`text-center ${idToStatus(louage, louages) ? 'text-success' : 'text-danger'}`}>{idToStatus(louage, louages)?"في المحطة":"مش في المحطة"}</td>
+          {/* <td className={`text-center ${idToStatus(louage, louages) ? 'text-success' : 'text-danger'}`}>{idToStatus(louage, louages)?"في المحطة":"مش في المحطة"}</td> */}
               <td className="text-center"><button className='btn btn-success' onClick={()=>handlePayment(louage)} hidden={idInPaidList(louage, paidLouages)? true : false} >payer</button></td>
               <td className={`text-center ${idInPaidList(louage, paidLouages)? 'text-success' : 'text-danger'}`}>{idInPaidList(louage, paidLouages)?"خالص":"مش خالص"}</td>
         </tr>

@@ -24,7 +24,7 @@ const TicketList=()=>{
     
         // Clean up event listener
         return () => {
-          window.electron.ipcRenderer.removeAllListeners('destinations');
+          window.electron.ipcRenderer.removeAllListeners('tickets');
         };
       }, []);
 

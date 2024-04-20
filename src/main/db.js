@@ -73,19 +73,9 @@ const ticketschema= new mongoose.Schema({
 })
 const Ticket=mongoose.model('Ticket',ticketschema);
 
-const electschema=new mongoose.Schema({
-  email:String,
-  password:String,
-  expireDate:Date,
-  paiment:Boolean,
-  inStation:Boolean
+const cityListschema=new mongoose.Schema({
+  cities:[]
 })
-const Elect=mongoose.model("Elect",electschema);
+const CityList=mongoose.model("CityList",cityListschema);
 
-const destschema=new mongoose.Schema({
-  name:String,
-  tarif:Number,
-})
-const Dest=mongoose.model("Dest",destschema);
-
-export { Louaje, Station, Passenger, Ticket, Elect, Dest };
+export { Louaje, Station, Passenger, Ticket, CityList};

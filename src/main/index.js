@@ -27,8 +27,7 @@ import {
   Station,
   Passenger,
   Ticket,
-  Elect,
-  Dest } from "./db"
+  CityList } from "./db"
 
   const doc_file = new jsPDF();
 //mongodb architeture
@@ -96,6 +95,13 @@ async function  buyTicket (ses,
         )
         console.log("updateLouage: ",updateLouage)
 
+        const result2=await Station.findOneAndUpdate(
+          { email: ses.getUserAgent(), "louages.destinationCity": ticketName },
+          { $inc:{"louages.$.placesDisponibles":-numberOfTickets} },
+          { new: true } 
+      )
+      console.log("decrimented in station whrn ticket bought: ",result2)
+
         let destinations=await stationCollection.findOne({email:ses.getUserAgent()}).lean()
         console.log("destinations: ",destinations)
           
@@ -133,6 +139,13 @@ async function  buyTicket (ses,
           {$set:{places:newLouageList,availableSeats:newAvailableSeats}}
         )
         console.log("updateLouage: ",updateLouage)
+
+        const result2=await Station.findOneAndUpdate(
+          { email: ses.getUserAgent(), "louages.destinationCity": ticketName },
+          { $inc:{"louages.$.placesDisponibles":-Math.abs(nombrePlacesDisponibles-numberOfTickets)} },
+          { new: true } 
+      )
+      console.log("decrimented in station whrn ticket bought: ",result2)
 
         let destinations=await stationCollection.findOne({email:ses.getUserAgent()}).lean()
         console.log("destinations: ",destinations)
@@ -201,10 +214,7 @@ function modifyObject(freeSeastList,listSeats){
   }
   return newObject;
 }
-// gerate code for station every day
-const generateCodeStation=()=>{
 
-}
 async function handleFileOpen () {
   const { canceled, filePaths } = await dialog.showOpenDialog()
   if (!canceled) {
@@ -364,7 +374,7 @@ app.whenReady().then(() => {
         not()
         notification.show()
       });
-
+      
       // const os = require('os');
       // const path = require('path');
       // const desktopDir = path.join(os.homedir(), "Desktop");
@@ -453,7 +463,7 @@ app.whenReady().then(() => {
             console.log("addlouage: ",addLouage)
 
             const addLouageToDestination=await Station.findOneAndUpdate(
-              { email: ses.getUserAgent(), "louages.destinationCity": addLouage.city },
+              { email: ses.getUserAgent(), "louages.destinationCity": trajet2 },
               { $addToSet: { "louages.$.lougeIds": louageId._id.toString() } },
               { new: true } 
           )
@@ -466,7 +476,7 @@ app.whenReady().then(() => {
         console.log(updateStation.city)
 
         const update = await Station.findOneAndUpdate(
-          { email: ses.getUserAgent(), "louages.destinationCity": updateStation.city },
+          { email: ses.getUserAgent(), "louages.destinationCity": trajet2 },
           { $inc: { "louages.$.placesDisponibles": 8 } }, 
           { new: true });
         console.log("update",update)
@@ -481,7 +491,7 @@ app.whenReady().then(() => {
       
       
       
-
+      //achat ticket
       ipcMain.on('achat-ticket',async(event,ticket)=>{
         try{
           console.log("ticket est achete",ticket)
@@ -531,7 +541,7 @@ app.whenReady().then(() => {
             { $project: { _id: 0, tax: 1 } }
         ]);
         console.log(listtax[0].tax[0]._id.toString())
-        
+        //louages -->> louagesOfAllTime
           event.sender.send('destinations',destinations.louages,louages,listtax[0]?listtax[0].tax[0].paidLouages:[])
           console.log("data is sent to react")
         }catch(error){
@@ -553,6 +563,17 @@ app.whenReady().then(() => {
         event.sender.send('add-destination',addDestination?true:false)
         }catch(error){
           console.error(`error in add-destination route ${error}`)
+        }
+      })
+      //code station
+      ipcMain.on('code-station',async(event)=>{
+        try{
+          let codeStation=await Station.findOne({email:ses.getUserAgent()})
+          console.log("code de station: ",codeStation.codeStation)
+
+          event.sender.send('code-station',codeStation.codeStation?codeStation.codeStation:"")
+        }catch(error){
+          console.error("error in code-station route: ",error)
         }
       })
 
@@ -718,7 +739,7 @@ app.whenReady().then(() => {
           console.log(`id recieved in scan-entree: ${id}`)
 
           const louage=await Louaje.findById({_id:id})
-          console.log(`fetched louage from db: ${louage}`)
+          console.log(`fetched louage to string(): ${louage._id.toString()}`)
 
           entreeNotification(louage.matricule)
           entreeAlert.show()
@@ -737,22 +758,47 @@ app.whenReady().then(() => {
           const stationInfo=await Station.findOne({email:ses.getUserAgent()})
           console.log(stationInfo)
           
-          const statusLouage=await Louaje.updateOne({id:louage.id},{$set:{places:defaultPlaces,status:true,cityDeparture:stationInfo.city,cityArrival:louage.cityDeparture}})
+          const statusLouage=await Louaje.updateOne({id:louage._id.toString()},
+            {$set:{places:defaultPlaces,
+              status:true,
+              cityDeparture:stationInfo.city,
+              cityArrival:louage.cityDeparture,
+              availableSeats:8}})
           console.log(`status louage est change ${statusLouage}`)
           
           const result2=await Station.findOneAndUpdate(
               { email: ses.getUserAgent(), "louages.destinationCity": louage.cityDeparture },
-              { $addToSet: { "louages.$.lougeIds": louage.toString() } },
+              { $addToSet: { "louages.$.lougeIds": louage._id.toString() },
+            $inc:{"louages.$.placesDisponibles":8,countLouaje:1} },
               { new: true } 
           )
           console.log(result2)
+
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          console.log(`les louages: ${louages}`)
+
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax[0].tax[0]._id.toString())
+        //louages -->> louagesOfAllTime
+          event.sender.send('destinations',destinations.louages,louages,listtax[0]?listtax[0].tax[0].paidLouages:[])
+          console.log("data is sent to react")
 
         }catch(error){console.error("error in scan-entree route:",error)}
       })
 
       //scan sortie
       ipcMain.on('scan-sortie',async(event,id)=>{
-        const louage=await Louaje.findById({_id:id})
+        try{
+          const louage=await Louaje.findById({_id:id})
         console.log(`fetched louage from db: ${louage}`)
 
         sortieNotification(louage.matricule)
@@ -767,17 +813,43 @@ app.whenReady().then(() => {
         ]);
         console.log(firstLouage)
         
-        const result2=await Station.findOneAndUpdate(
-          { email:ses.getUserAgent(), "louages.destinationCity": "ariana" },
-          { $pull: { "louages.$.lougeIds": firstLouage[0].firstLouage } },
-          { new: true } 
-        )
-        console.log(result2)
+        if(firstLouage[0].firstLouage==id){
+          
+          const result2=await Station.findOneAndUpdate(
+            { email:ses.getUserAgent(), "louages.destinationCity": louage.cityArrival },
+            { $pull: { "louages.$.lougeIds": firstLouage[0].firstLouage },
+            $inc:{countLouaje:-1},
+            $set:{"louages.$.placesDisponibles":-louage.availableSeats} },
+            { new: true } 
+          )
+          console.log("result2 : ",result2)
+  
+          const statusChange=await Louaje.updateOne({_id:id},{$set:{status:false}})
+          console.log(`fetched louage from db: ${statusChange}`)
 
-        const statusChange=await Louaje.updateOne({_id:id},{status:false})
-        console.log(`fetched louage from db: ${statusChange}`)
+          const destinations=await Station.findOne({email:ses.getUserAgent()}).lean()
+          console.log(destinations.louages)
+          
+          const louages = await Louaje.aggregate([{$project: { _id: { $toString: "$_id" },matricule: 1 ,availableSeats:1,status:1}}]);
+          console.log(`les louages: ${louages}`)
 
-        console.log("louage est sortie",id)
+          let listtax=await Station.aggregate([
+            { $match: { email: ses.getUserAgent()} },
+            { $unwind: '$tax' },
+            { $sort: { "tax.dayOfPaiment": -1 } },
+            { $group: {_id: "$_id", tax: { $push: "$tax" }}},
+            { $project: { _id: 0, tax: 1 } }
+        ]);
+        console.log(listtax[0].tax[0]._id.toString())
+        //louages -->> louagesOfAllTime
+          event.sender.send('destinations',destinations.louages,louages,listtax[0]?listtax[0].tax[0].paidLouages:[])
+          console.log("data is sent to react")
+          console.log("louage est sortie",id)
+        }
+
+        }catch(error){
+          console.error("error in scan-sortie route: ",error)
+        }
       })
 
 
